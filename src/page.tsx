@@ -5,9 +5,11 @@ import logo from "@/assets/logo.png";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/devere-ui/button";
 import { LoadingScreen } from "@/components/devere-ui/loading-screen";
+import { ThemeToggle } from "@/components/devere-ui/theme-toggle";
+import { cn } from "@/lib/utils";
 
 const NAMESPACE_SETUP =
-  "npx shadcn@latest registry add @devere-ui=https://wealthtechgroup.github.io/devere-ui/r/{name}.json";
+  "npx shadcn@latest registry add '@devere-ui=https://wealthtechgroup.github.io/devere-ui/r/{name}.json'";
 
 interface RegistryItem {
   demo: ReactNode;
@@ -66,11 +68,29 @@ const items: RegistryItem[] = [
       "A full-area loading state with a spinning ring and optional centered logo.",
     demo: <LoadingScreen className="h-48 w-full" logoUrl={logo} size={72} />,
   },
+  {
+    name: "theme-toggle",
+    title: "Theme Toggle",
+    description:
+      "A dropdown to switch between light, dark, and system theme. Wrap your app in ThemeProvider (included on install).",
+    demo: <ThemeToggle size="icon-sm" variant="outline" />,
+  },
 ];
 
-function CommandRow({ command }: { command: string }) {
+function CommandRow({
+  command,
+  className,
+}: {
+  command: string;
+  className?: string;
+}) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 py-1 pr-1 pl-3">
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-lg border bg-muted/40 py-1 pr-1 pl-3",
+        className
+      )}
+    >
       <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-muted-foreground text-xs">
         {command}
       </code>
@@ -103,10 +123,11 @@ function RegistryCard({ item }: { item: RegistryItem }) {
 
 export function App() {
   return (
-    <div className="mx-auto flex min-h-svh max-w-3xl flex-col gap-8 px-6 py-12">
+    <div className="mx-auto flex min-h-svh max-w-4xl flex-col gap-8 px-6 py-12">
       <header className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
           <h1 className="font-semibold text-2xl tracking-tight">deVere UI</h1>
+          <ThemeToggle className="ml-auto" size="icon-sm" variant="outline" />
           <Button
             onClick={() =>
               window.open(
