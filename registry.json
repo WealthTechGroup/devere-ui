@@ -17,6 +17,19 @@
           "target": "@components/devere-ui/button.tsx"
         }
       ]
+    },
+    {
+      "name": "loading-screen",
+      "type": "registry:ui",
+      "title": "Loading Screen",
+      "description": "A full-area loading state with a spinning ring and optional centered logo.",
+      "files": [
+        {
+          "path": "src/components/devere-ui/loading-screen.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/loading-screen.tsx"
+        }
+      ]
     }
   ]
 }

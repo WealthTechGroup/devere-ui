@@ -23,6 +23,7 @@ npx shadcn@latest add @devere-ui/button
 ## Components
 
 - **button** — the shadcn button with a `loading` state (spinner + optional `loadingText`).
+- **loading-screen** — full-area loading state with a spinning ring and optional centered logo (`logoUrl` prop).
 
 ## Develop
 

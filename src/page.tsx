@@ -1,7 +1,10 @@
 import { DownloadCloudIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
+
+import logo from "@/assets/logo.png";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/devere-ui/button";
+import { LoadingScreen } from "@/components/devere-ui/loading-screen";
 
 const NAMESPACE_SETUP =
   "npx shadcn@latest registry add @devere-ui=https://wealthtechgroup.github.io/devere-ui/r/{name}.json";
@@ -55,6 +58,13 @@ const items: RegistryItem[] = [
     description:
       "A button built on the shadcn button that adds a loading state with a spinner and optional loading text.",
     demo: <LoadingButtonDemo />,
+  },
+  {
+    name: "loading-screen",
+    title: "Loading Screen",
+    description:
+      "A full-area loading state with a spinning ring and optional centered logo.",
+    demo: <LoadingScreen className="h-48 w-full" logoUrl={logo} size={72} />,
   },
 ];
 
