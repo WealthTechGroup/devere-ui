@@ -1,21 +1,38 @@
-# React + TypeScript + Vite + shadcn/ui
+# devere-ui
 
-This is a template for a new Vite project with React, TypeScript, and shadcn/ui.
+A shadcn-compatible component registry. Components install into a
+`components/devere-ui/` folder, alongside the shadcn primitives they build on.
 
-## Adding components
+Showcase: https://wealthtechgroup.github.io/devere-ui
 
-To add components to your app, run the following command:
+## Install a component
+
+Zero-config, straight from GitHub:
 
 ```bash
-npx shadcn@latest add button
+npx shadcn@latest add WealthTechGroup/devere-ui/button
 ```
 
-This will place the ui components in the `src/components` directory.
+Or via the `@devere-ui` namespace (register once per project):
 
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button"
+```bash
+npx shadcn@latest registry add @devere-ui=https://wealthtechgroup.github.io/devere-ui/r/{name}.json
+npx shadcn@latest add @devere-ui/button
 ```
+
+## Components
+
+- **button** — the shadcn button with a `loading` state (spinner + optional `loadingText`).
+
+## Develop
+
+```bash
+npm install
+npm run dev              # showcase at localhost:5173
+npm run registry:validate
+npm run registry:build   # writes JSON to public/r
+```
+
+Add a component under `src/components/devere-ui/`, register it in `registry.json`
+with `"target": "@components/devere-ui/<name>.tsx"`, then push to `main` — CI
+builds the registry and deploys the showcase to GitHub Pages.

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "devere-ui",
+  "homepage": "https://wealthtechgroup.github.io/devere-ui",
+  "items": [
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "A button built on the shadcn button that adds a loading state with a spinner and optional loading text.",
+      "registryDependencies": ["button"],
+      "dependencies": ["lucide-react"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/button.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/button.tsx"
+        }
+      ]
+    }
+  ]
+}
