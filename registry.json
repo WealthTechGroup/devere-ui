@@ -79,6 +79,21 @@
           "target": "@components/devere-ui/dialog.tsx"
         }
       ]
+    },
+    {
+      "name": "not-found",
+      "type": "registry:ui",
+      "title": "Not Found",
+      "description": "A centered 404 page with icon, title, and description. Title and description are customizable.",
+      "registryDependencies": ["card"],
+      "dependencies": ["lucide-react"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/not-found.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/not-found.tsx"
+        }
+      ]
     }
   ]
 }

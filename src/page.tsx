@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/devere-ui/dialog";
 import { LoadingScreen } from "@/components/devere-ui/loading-screen";
+import { NotFound } from "@/components/devere-ui/not-found";
 import {
   Tabs,
   TabsContent,
@@ -194,6 +195,12 @@ const items: RegistryItem[] = [
     description:
       "A modal dialog with overlay, header, scrollable body, footer and an optional close button.",
     demo: <DialogDemo />,
+  },
+  {
+    name: "not-found",
+    title: "Not Found",
+    description: "A centered 404 page with icon, title and description.",
+    demo: <NotFound className="min-h-48" />,
   },
 ];
 
