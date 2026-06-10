@@ -14,10 +14,12 @@ function ThemeToggle({
   className,
   variant = "ghost",
   size = "icon",
+  align = "start",
 }: {
   className?: string;
   variant?: VariantProps<typeof buttonVariants>["variant"];
   size?: VariantProps<typeof buttonVariants>["size"];
+  align?: React.ComponentProps<typeof DropdownMenuContent>["align"];
 }) {
   const { theme, setTheme } = useTheme();
 
@@ -31,7 +33,7 @@ function ThemeToggle({
           </Button>
         }
       />
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align={align}>
         <DropdownMenuItem
           className={cn(
             theme === "light" && "pointer-events-none text-primary"

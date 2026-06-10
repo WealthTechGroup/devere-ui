@@ -4,6 +4,16 @@ import { type ReactNode, useState } from "react";
 import logo from "@/assets/logo.png";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/devere-ui/button";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/devere-ui/dialog";
 import { LoadingScreen } from "@/components/devere-ui/loading-screen";
 import {
   Tabs,
@@ -122,6 +132,33 @@ function TabsDemo() {
   );
 }
 
+function DialogDemo() {
+  return (
+    <Dialog>
+      <DialogTrigger render={<Button variant="outline" />}>
+        Open dialog
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit profile</DialogTitle>
+          <DialogDescription>
+            Make changes to your profile here.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody>
+          <p className="text-muted-foreground text-sm">
+            Update your name, email, and preferences. The body scrolls when
+            content exceeds the dialog height.
+          </p>
+        </DialogBody>
+        <DialogFooter closeButtonText="Cancel" showCloseButton>
+          <Button>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 const items: RegistryItem[] = [
   {
     name: "button",
@@ -148,8 +185,15 @@ const items: RegistryItem[] = [
     name: "tabs",
     title: "Tabs",
     description:
-      "Tabs built on Base UI with default and line variants, horizontal and vertical orientation and an animated sliding indicator.",
+      "Tabs with default and line variants, horizontal and vertical orientation and an animated sliding indicator.",
     demo: <TabsDemo />,
+  },
+  {
+    name: "dialog",
+    title: "Dialog",
+    description:
+      "A modal dialog with overlay, header, scrollable body, footer and an optional close button.",
+    demo: <DialogDemo />,
   },
 ];
 

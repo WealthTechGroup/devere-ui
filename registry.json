@@ -64,6 +64,21 @@
           "target": "@components/devere-ui/tabs.tsx"
         }
       ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "A modal dialog built on Base UI with overlay, header, scrollable body, footer, and an optional close button.",
+      "registryDependencies": ["button"],
+      "dependencies": ["@base-ui/react", "lucide-react"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/dialog.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/dialog.tsx"
+        }
+      ]
     }
   ]
 }
