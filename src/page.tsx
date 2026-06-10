@@ -5,6 +5,12 @@ import logo from "@/assets/logo.png";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/devere-ui/button";
 import { LoadingScreen } from "@/components/devere-ui/loading-screen";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/devere-ui/tabs";
 import { ThemeToggle } from "@/components/devere-ui/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +59,69 @@ function LoadingButtonDemo() {
   );
 }
 
+const TAB_ITEMS = [
+  { label: "Overview", value: "overview" },
+  { label: "Analytics", value: "analytics" },
+  { label: "Reports", value: "reports" },
+] as const;
+
+function TabsContentPreview({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-md border bg-muted/20 px-3 py-2 text-muted-foreground text-xs">
+      {children}
+    </div>
+  );
+}
+
+function TabsExample({
+  label,
+  orientation = "horizontal",
+  variant = "default",
+}: {
+  label: string;
+  orientation?: "horizontal" | "vertical";
+  variant?: "default" | "line";
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="font-medium text-muted-foreground text-xs">{label}</span>
+      <Tabs
+        className={cn("w-full", orientation === "vertical" && "min-h-28")}
+        defaultValue="overview"
+        orientation={orientation}
+      >
+        <TabsList variant={variant}>
+          {TAB_ITEMS.map((item) => (
+            <TabsTrigger key={item.value} value={item.value}>
+              {item.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {TAB_ITEMS.map((item) => (
+          <TabsContent key={item.value} value={item.value}>
+            <TabsContentPreview>{item.label} content</TabsContentPreview>
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+function TabsDemo() {
+  return (
+    <div className="grid w-full gap-6 sm:grid-cols-2">
+      <TabsExample label="Horizontal · Default" />
+      <TabsExample label="Horizontal · Line" variant="line" />
+      <TabsExample label="Vertical · Default" orientation="vertical" />
+      <TabsExample
+        label="Vertical · Line"
+        orientation="vertical"
+        variant="line"
+      />
+    </div>
+  );
+}
+
 const items: RegistryItem[] = [
   {
     name: "button",
@@ -74,6 +143,13 @@ const items: RegistryItem[] = [
     description:
       "A dropdown to switch between light, dark, and system theme. Wrap your app in ThemeProvider (included on install).",
     demo: <ThemeToggle size="icon-sm" variant="outline" />,
+  },
+  {
+    name: "tabs",
+    title: "Tabs",
+    description:
+      "Tabs built on Base UI with default and line variants, horizontal and vertical orientation and an animated sliding indicator.",
+    demo: <TabsDemo />,
   },
 ];
 

@@ -50,6 +50,20 @@
           "target": "@components/devere-ui/theme-toggle.tsx"
         }
       ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Tabs built on Base UI with default and line variants, horizontal and vertical orientation, and an animated sliding indicator.",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/tabs.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/tabs.tsx"
+        }
+      ]
     }
   ]
 }
