@@ -94,6 +94,48 @@
           "target": "@components/devere-ui/not-found.tsx"
         }
       ]
+    },
+    {
+      "name": "table",
+      "type": "registry:ui",
+      "title": "Table",
+      "description": "A styled table with header, body, footer, and a truncated cell helper.",
+      "files": [
+        {
+          "path": "src/components/devere-ui/table.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-table",
+      "type": "registry:ui",
+      "title": "Data Table",
+      "description": "A TanStack Table wrapper with sorting, filtering, pagination, column visibility, and CSV export. Built from the shadcn tasks example.",
+      "registryDependencies": [
+        "badge",
+        "button",
+        "command",
+        "dropdown-menu",
+        "input",
+        "popover",
+        "select",
+        "separator"
+      ],
+      "dependencies": ["@tanstack/react-table", "lucide-react", "cmdk"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/table.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/table.tsx"
+        },
+        {
+          "path": "src/components/devere-ui/data-table.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/data-table.tsx"
+        }
+      ]
     }
   ]
 }

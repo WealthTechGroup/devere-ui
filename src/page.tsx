@@ -1,28 +1,25 @@
-import { DownloadCloudIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 
-import logo from "@/assets/logo.png";
 import { CopyButton } from "@/components/copy-button";
+import { DemoFrame } from "@/components/demo-frame";
 import { Button } from "@/components/devere-ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/devere-ui/dialog";
-import { LoadingScreen } from "@/components/devere-ui/loading-screen";
-import { NotFound } from "@/components/devere-ui/not-found";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/devere-ui/tabs";
 import { ThemeToggle } from "@/components/devere-ui/theme-toggle";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ButtonDemo } from "@/demos/button-demo";
+import { DialogDemo } from "@/demos/dialog-demo";
+import { LoadingScreenDemo } from "@/demos/loading-screen-demo";
+import { NotFoundDemo } from "@/demos/not-found-demo";
+import { TableDemo } from "@/demos/table-demo";
+import { TabsDemo } from "@/demos/tabs-demo";
+import { TasksDataTableDemo } from "@/demos/tasks-data-table-demo";
+import { ThemeToggleDemo } from "@/demos/theme-toggle-demo";
 import { cn } from "@/lib/utils";
 
 const NAMESPACE_SETUP =
@@ -31,133 +28,10 @@ const NAMESPACE_SETUP =
 interface RegistryItem {
   demo: ReactNode;
   description: string;
+  expandable?: boolean;
   name: string;
+  previewClassName?: string;
   title: string;
-}
-
-function LoadingButtonDemo() {
-  const [loading, setLoading] = useState(false);
-  const [iconLoading, setIconLoading] = useState(false);
-
-  return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Button
-        loading={loading}
-        onClick={() => {
-          setLoading(true);
-          setTimeout(() => setLoading(false), 2000);
-        }}
-      >
-        Save changes
-      </Button>
-      <Button loading variant="outline">
-        Loading
-      </Button>
-      <Button
-        loading={iconLoading}
-        onClick={() => {
-          setIconLoading(true);
-          setTimeout(() => setIconLoading(false), 2000);
-        }}
-        size="icon"
-      >
-        <DownloadCloudIcon />
-      </Button>
-      <Button loading size="icon" variant="outline">
-        <DownloadCloudIcon />
-      </Button>
-    </div>
-  );
-}
-
-const TAB_ITEMS = [
-  { label: "Overview", value: "overview" },
-  { label: "Analytics", value: "analytics" },
-  { label: "Reports", value: "reports" },
-] as const;
-
-function TabsContentPreview({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-md border bg-muted/20 px-3 py-2 text-muted-foreground text-xs">
-      {children}
-    </div>
-  );
-}
-
-function TabsExample({
-  label,
-  orientation = "horizontal",
-  variant = "default",
-}: {
-  label: string;
-  orientation?: "horizontal" | "vertical";
-  variant?: "default" | "line";
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="font-medium text-muted-foreground text-xs">{label}</span>
-      <Tabs
-        className={cn("w-full", orientation === "vertical" && "min-h-28")}
-        defaultValue="overview"
-        orientation={orientation}
-      >
-        <TabsList variant={variant}>
-          {TAB_ITEMS.map((item) => (
-            <TabsTrigger key={item.value} value={item.value}>
-              {item.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {TAB_ITEMS.map((item) => (
-          <TabsContent key={item.value} value={item.value}>
-            <TabsContentPreview>{item.label} content</TabsContentPreview>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  );
-}
-
-function TabsDemo() {
-  return (
-    <div className="grid w-full gap-6 sm:grid-cols-2">
-      <TabsExample label="Horizontal · Default" />
-      <TabsExample label="Horizontal · Line" variant="line" />
-      <TabsExample label="Vertical · Default" orientation="vertical" />
-      <TabsExample
-        label="Vertical · Line"
-        orientation="vertical"
-        variant="line"
-      />
-    </div>
-  );
-}
-
-function DialogDemo() {
-  return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        Open dialog
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit profile</DialogTitle>
-          <DialogDescription>
-            Make changes to your profile here.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogBody>
-          <p className="text-muted-foreground text-sm">
-            Update your name, email, and preferences. The body scrolls when
-            content exceeds the dialog height.
-          </p>
-        </DialogBody>
-        <DialogFooter closeButtonText="Cancel" showCloseButton>
-          <Button>Save changes</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
 }
 
 const items: RegistryItem[] = [
@@ -166,21 +40,21 @@ const items: RegistryItem[] = [
     title: "Button",
     description:
       "A button built on the shadcn button that adds a loading state with a spinner and optional loading text.",
-    demo: <LoadingButtonDemo />,
+    demo: <ButtonDemo />,
   },
   {
     name: "loading-screen",
     title: "Loading Screen",
     description:
       "A full-area loading state with a spinning ring and optional centered logo.",
-    demo: <LoadingScreen className="h-48 w-full" logoUrl={logo} size={72} />,
+    demo: <LoadingScreenDemo />,
   },
   {
     name: "theme-toggle",
     title: "Theme Toggle",
     description:
       "A dropdown to switch between light, dark, and system theme. Wrap your app in ThemeProvider (included on install).",
-    demo: <ThemeToggle size="icon-sm" variant="outline" />,
+    demo: <ThemeToggleDemo />,
   },
   {
     name: "tabs",
@@ -188,6 +62,8 @@ const items: RegistryItem[] = [
     description:
       "Tabs with default and line variants, horizontal and vertical orientation and an animated sliding indicator.",
     demo: <TabsDemo />,
+    expandable: true,
+    previewClassName: "items-start justify-start overflow-auto",
   },
   {
     name: "dialog",
@@ -200,7 +76,24 @@ const items: RegistryItem[] = [
     name: "not-found",
     title: "Not Found",
     description: "A centered 404 page with icon, title and description.",
-    demo: <NotFound className="min-h-48" />,
+    demo: <NotFoundDemo />,
+  },
+  {
+    name: "table",
+    title: "Table",
+    description:
+      "A styled table with header, body, footer, and a truncated cell helper.",
+    demo: <TableDemo />,
+    previewClassName: "items-start justify-start",
+  },
+  {
+    name: "data-table",
+    title: "Data Table",
+    description:
+      "A TanStack Table wrapper with sorting, filters, pagination, and column visibility. Tasks example inspired by shadcn.",
+    demo: <TasksDataTableDemo />,
+    expandable: true,
+    previewClassName: "items-start justify-start overflow-auto",
   },
 ];
 
@@ -212,39 +105,43 @@ function CommandRow({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-lg border bg-muted/40 py-1 pr-1 pl-3",
-        className
-      )}
+    <Card
+      className={cn("flex-row items-center gap-2 py-1 pr-1 pl-3", className)}
+      size="sm"
     >
       <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-muted-foreground text-xs">
         {command}
       </code>
       <CopyButton value={command} />
-    </div>
+    </Card>
   );
 }
 
 function RegistryCard({ item }: { item: RegistryItem }) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border p-5">
-      <div className="flex flex-col gap-1">
-        <h2 className="font-medium text-base">{item.title}</h2>
-        <p className="text-muted-foreground text-sm">{item.description}</p>
-      </div>
-
-      <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed bg-muted/20 p-6">
-        {item.demo}
-      </div>
-
-      <div className="flex flex-col gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>{item.title}</CardTitle>
+        <CardDescription>{item.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DemoFrame
+          className={item.previewClassName}
+          expandable={item.expandable}
+        >
+          {item.demo}
+        </DemoFrame>
+      </CardContent>
+      <CardFooter className="flex-col items-stretch gap-2 border-t">
         <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
           Install
         </span>
-        <CommandRow command={`npx shadcn@latest add @devere-ui/${item.name}`} />
-      </div>
-    </section>
+        <CommandRow
+          className="bg-muted/40 shadow-none ring-0"
+          command={`npx shadcn@latest add @devere-ui/${item.name}`}
+        />
+      </CardFooter>
+    </Card>
   );
 }
 
