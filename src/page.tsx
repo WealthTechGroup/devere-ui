@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { ButtonDemo } from "@/demos/button-demo";
 import { DialogDemo } from "@/demos/dialog-demo";
+import { FormattersDemo } from "@/demos/formatters-demo";
 import { LoadingScreenDemo } from "@/demos/loading-screen-demo";
 import { NotFoundDemo } from "@/demos/not-found-demo";
 import { TableDemo } from "@/demos/table-demo";
@@ -94,6 +95,14 @@ const items: RegistryItem[] = [
     demo: <TasksDataTableDemo />,
     expandable: true,
     previewClassName: "items-start justify-start overflow-auto",
+  },
+  {
+    name: "formatters",
+    title: "Formatters",
+    description:
+      "Currency, number, and string formatters using Intl with compact notation and currency display helpers.",
+    demo: <FormattersDemo />,
+    previewClassName: "items-start justify-start",
   },
 ];
 

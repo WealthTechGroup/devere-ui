@@ -136,6 +136,19 @@
           "target": "@components/devere-ui/data-table.tsx"
         }
       ]
+    },
+    {
+      "name": "formatters",
+      "type": "registry:lib",
+      "title": "Formatters",
+      "description": "Currency, number, and string formatters using Intl with compact notation and currency display helpers.",
+      "files": [
+        {
+          "path": "src/lib/formatters.ts",
+          "type": "registry:lib",
+          "target": "@lib/formatters.ts"
+        }
+      ]
     }
   ]
 }
