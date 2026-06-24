@@ -12,8 +12,6 @@ import {
   DrawerTrigger,
 } from "@/components/devere-ui/drawer";
 
-const DRAWER_SNAP_POINTS = ["24rem", "36rem", 1];
-
 function DrawerDemo() {
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -46,7 +44,7 @@ function DrawerDemo() {
         </DrawerContent>
       </Drawer>
 
-      <Drawer defaultSnapPoint="24rem" snapPoints={DRAWER_SNAP_POINTS}>
+      <Drawer defaultSnapPoint="24rem" resizable>
         <DrawerTrigger render={<Button variant="outline" />}>
           <PanelBottomOpenIcon />
           Open snap drawer
