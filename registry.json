@@ -163,6 +163,28 @@
           "target": "@lib/formatters.ts"
         }
       ]
+    },
+    {
+      "name": "dashboard",
+      "type": "registry:ui",
+      "title": "Dashboard",
+      "description": "A dashboard layout with sidebar navigation, top bar, user menu and injectable nav links for your router.",
+      "registryDependencies": [
+        "avatar",
+        "@devere-ui/button",
+        "dropdown-menu",
+        "separator",
+        "sidebar",
+        "@devere-ui/theme-toggle"
+      ],
+      "dependencies": ["lucide-react"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/dashboard.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/dashboard.tsx"
+        }
+      ]
     }
   ]
 }

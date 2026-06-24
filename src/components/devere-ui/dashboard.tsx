@@ -6,6 +6,8 @@ import {
   type HTMLAttributes,
   type ReactNode,
 } from "react";
+import { Button } from "@/components/devere-ui/button";
+import { ThemeToggle } from "@/components/devere-ui/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -33,9 +36,6 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { Separator } from "../ui/separator";
-import { Button } from "./button";
-import { ThemeToggle } from "./theme-toggle";
 
 type NavBadge = { count: number; className?: string };
 
