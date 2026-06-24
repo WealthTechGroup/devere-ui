@@ -1,3 +1,4 @@
+import { PanelBottomOpenIcon, PanelRightOpenIcon } from "lucide-react";
 import { Button } from "@/components/devere-ui/button";
 import {
   Drawer,
@@ -18,6 +19,7 @@ function DrawerDemo() {
     <div className="flex flex-wrap items-center gap-3">
       <Drawer>
         <DrawerTrigger render={<Button variant="outline" />}>
+          <PanelBottomOpenIcon />
           Open drawer
         </DrawerTrigger>
         <DrawerContent className="max-h-100">
@@ -46,6 +48,7 @@ function DrawerDemo() {
 
       <Drawer defaultSnapPoint="24rem" snapPoints={DRAWER_SNAP_POINTS}>
         <DrawerTrigger render={<Button variant="outline" />}>
+          <PanelBottomOpenIcon />
           Open snap drawer
         </DrawerTrigger>
         <DrawerContent className="">
@@ -82,7 +85,8 @@ function DrawerDemo() {
       </Drawer>
 
       <Drawer direction="right">
-        <DrawerTrigger render={<Button variant="secondary" />}>
+        <DrawerTrigger render={<Button variant="outline" />}>
+          <PanelRightOpenIcon />
           Open side drawer
         </DrawerTrigger>
         <DrawerContent>
