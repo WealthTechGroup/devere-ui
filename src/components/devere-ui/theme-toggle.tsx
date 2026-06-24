@@ -15,11 +15,13 @@ function ThemeToggle({
   variant = "ghost",
   size = "icon",
   align = "start",
+  title,
 }: {
   className?: string;
   variant?: VariantProps<typeof buttonVariants>["variant"];
   size?: VariantProps<typeof buttonVariants>["size"];
   align?: React.ComponentProps<typeof DropdownMenuContent>["align"];
+  title?: string;
 }) {
   const { theme, setTheme } = useTheme();
 
@@ -30,6 +32,7 @@ function ThemeToggle({
           <Button className={className} size={size} variant={variant}>
             <Sun className="dark:hidden" />
             <Moon className="hidden dark:block" />
+            {title}
           </Button>
         }
       />

@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ButtonDemo } from "@/demos/button-demo";
+import { DashboardDemo } from "@/demos/dashboard-demo";
 import { DialogDemo } from "@/demos/dialog-demo";
 import { DrawerDemo } from "@/demos/drawer-demo";
 import { FormattersDemo } from "@/demos/formatters-demo";
@@ -111,6 +112,13 @@ const items: RegistryItem[] = [
       "Currency, number and string formatters using Intl with compact notation and currency display helpers.",
     demo: <FormattersDemo />,
     previewClassName: "items-start justify-start",
+  },
+  {
+    name: "dashboard",
+    title: "Dashboard",
+    description: "A dashboard with a sidebar and a main content area.",
+    demo: <DashboardDemo />,
+    previewClassName: "px-0 -my-(--card-spacing)",
   },
 ];
 
