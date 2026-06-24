@@ -47,14 +47,14 @@ function DrawerDemo() {
       <Drawer defaultSnapPoint="24rem" resizable>
         <DrawerTrigger render={<Button variant="outline" />}>
           <PanelBottomOpenIcon />
-          Open snap drawer
+          Open resizable drawer
         </DrawerTrigger>
         <DrawerContent className="">
           <DrawerHeader>
             <DrawerTitle>Performance insights</DrawerTitle>
             <DrawerDescription>
-              Drag the handle to move between 24rem, 36rem and 100% viewport
-              snap points.
+              Drag the handle to move between 10% and 100% of the viewport
+              height.
             </DrawerDescription>
           </DrawerHeader>
           <DrawerBody className="grid gap-3 pt-0">
