@@ -164,7 +164,7 @@ function RegistryCard({ item }: { item: RegistryItem }) {
 
 export function App() {
   return (
-    <div className="mx-auto flex min-h-svh max-w-4xl flex-col gap-8 px-6 py-12">
+    <div className="mx-auto flex min-h-svh max-w-4xl flex-col gap-8 p-6">
       <header className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <h1 className="font-semibold text-2xl tracking-tight">deVere UI</h1>
