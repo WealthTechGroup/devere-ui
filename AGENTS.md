@@ -14,7 +14,7 @@ Biome (the underlying engine) provides robust linting and formatting. Most issue
 
 ## Core Principles
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+Write code that is **accessible, performant, type-safe and maintainable**. Focus on clarity and explicit intent over brevity.
 
 ### Type Safety & Explicitness
 
@@ -57,7 +57,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ### Error Handling & Debugging
 
-- Remove `console.log`, `debugger`, and `alert` statements from production code
+- Remove `console.log`, `debugger` and `alert` statements from production code
 - Throw `Error` objects with descriptive messages, not strings or other values
 - Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
 - Prefer early returns over nested conditionals for error cases
@@ -129,10 +129,10 @@ primitives they build on.
 Biome's linter will catch most issues automatically. Focus your attention on:
 
 1. **Business logic correctness** - Biome can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
+2. **Meaningful naming** - Use descriptive names for functions, variables and types
+3. **Architecture decisions** - Component structure, data flow and API design
 4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
+5. **User experience** - Accessibility, performance and usability considerations
 6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
 
 ---

@@ -25,7 +25,7 @@ function DialogDemo() {
         </DialogHeader>
         <DialogBody>
           <p className="text-muted-foreground text-sm">
-            Update your name, email, and preferences. The body scrolls when
+            Update your name, email and preferences. The body scrolls when
             content exceeds the dialog height.
           </p>
         </DialogBody>

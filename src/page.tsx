@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { ButtonDemo } from "@/demos/button-demo";
 import { DialogDemo } from "@/demos/dialog-demo";
+import { DrawerDemo } from "@/demos/drawer-demo";
 import { FormattersDemo } from "@/demos/formatters-demo";
 import { LoadingScreenDemo } from "@/demos/loading-screen-demo";
 import { NotFoundDemo } from "@/demos/not-found-demo";
@@ -54,7 +55,7 @@ const items: RegistryItem[] = [
     name: "theme-toggle",
     title: "Theme Toggle",
     description:
-      "A dropdown to switch between light, dark, and system theme. Wrap your app in ThemeProvider (included on install).",
+      "A dropdown to switch between light, dark and system theme. Wrap your app in ThemeProvider (included on install).",
     demo: <ThemeToggleDemo />,
   },
   {
@@ -74,6 +75,13 @@ const items: RegistryItem[] = [
     demo: <DialogDemo />,
   },
   {
+    name: "drawer",
+    title: "Drawer",
+    description:
+      "A swipeable drawer built on Base UI with overlay, handle, header, footer and directional placement.",
+    demo: <DrawerDemo />,
+  },
+  {
     name: "not-found",
     title: "Not Found",
     description: "A centered 404 page with icon, title and description.",
@@ -83,7 +91,7 @@ const items: RegistryItem[] = [
     name: "table",
     title: "Table",
     description:
-      "A styled table with header, body, footer, and a truncated cell helper.",
+      "A styled table with header, body, footer and a truncated cell helper.",
     demo: <TableDemo />,
     previewClassName: "items-start justify-start",
   },
@@ -91,7 +99,7 @@ const items: RegistryItem[] = [
     name: "data-table",
     title: "Data Table",
     description:
-      "A TanStack Table wrapper with sorting, filters, pagination, and column visibility. Tasks example inspired by shadcn.",
+      "A TanStack Table wrapper with sorting, filters, pagination and column visibility. Tasks example inspired by shadcn.",
     demo: <TasksDataTableDemo />,
     expandable: true,
     previewClassName: "items-start justify-start overflow-auto",
@@ -100,7 +108,7 @@ const items: RegistryItem[] = [
     name: "formatters",
     title: "Formatters",
     description:
-      "Currency, number, and string formatters using Intl with compact notation and currency display helpers.",
+      "Currency, number and string formatters using Intl with compact notation and currency display helpers.",
     demo: <FormattersDemo />,
     previewClassName: "items-start justify-start",
   },
