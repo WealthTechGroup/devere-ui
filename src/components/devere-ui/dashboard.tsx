@@ -40,26 +40,37 @@ import { ThemeToggle } from "./theme-toggle";
 type NavBadge = { count: number; className?: string };
 
 type NavItem = {
-  title?: string;
-  icon?: ReactNode;
+  title: string;
+  icon: ReactNode;
   to: string;
   badge?: NavBadge;
 };
 
-type NavLinkProps = HTMLAttributes<HTMLElement> & { to: string };
+type NavLinkProps = HTMLAttributes<HTMLElement> & {
+  to: string;
+  pathname?: string;
+};
 
 type NavLinkComponent = ComponentType<NavLinkProps>;
 
-export type { NavLinkComponent, NavLinkProps };
+export type { NavItem, NavLinkComponent, NavLinkProps };
 
-function resolveLinkRender(LinkComponent: NavLinkComponent, item: NavItem) {
+function resolveLinkRender(
+  LinkComponent: NavLinkComponent,
+  to: string,
+  pathname?: string
+) {
   return (props: HTMLAttributes<HTMLElement>) =>
-    createElement(LinkComponent, { ...props, to: item.to });
+    createElement(LinkComponent, { ...props, to, pathname });
 }
+
+const navMenuButtonClassName =
+  "border not-data-active:border-transparent data-active:border-border data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
 
 type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   items: { label: string; items: NavItem[] }[];
   linkComponent: NavLinkComponent;
+  pathname?: string;
   user: {
     initials: string;
     name: string;
@@ -74,10 +85,12 @@ export function AppSidebar({
   title,
   items,
   linkComponent,
+  pathname,
   user,
   signOut,
   logo,
   homePath = "/",
+  collapsible = "icon",
   ...props
 }: AppSidebarProps) {
   const { toggleSidebar } = useSidebar();
@@ -90,18 +103,14 @@ export function AppSidebar({
   };
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible={collapsible} {...props}>
       <SidebarHeader className="h-14 justify-center border-b">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="group-data-[collapsible=icon]:p-1.5!"
+              className="data-active:bg-transparent data-active:text-foreground group-data-[collapsible=icon]:p-1.5!"
               onClick={handleSidebarClick}
-              render={resolveLinkRender(linkComponent, {
-                title: "",
-                icon: undefined,
-                to: homePath,
-              })}
+              render={resolveLinkRender(linkComponent, homePath, pathname)}
             >
               <img alt="Dashboard Logo" height={24} src={logo} width={24} />
               <span className="font-bold">{title}</span>
@@ -117,9 +126,9 @@ export function AppSidebar({
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
-                    className="border not-data-[status=active]:border-transparent data-[status=active]:border-border data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-accent-foreground [&>svg]:text-muted-foreground"
+                    className={navMenuButtonClassName}
                     onClick={handleSidebarClick}
-                    render={resolveLinkRender(linkComponent, item)}
+                    render={resolveLinkRender(linkComponent, item.to, pathname)}
                     tooltip={item.title}
                   >
                     {item.icon}
@@ -242,9 +251,14 @@ function SidebarMenuTrigger({
   );
 }
 
-export function TopBar({ titleMap }: { titleMap?: Map<string, string> }) {
-  const pathname = window.location.pathname.split("/")[1];
-  const title = titleMap?.get(pathname);
+export function TopBar({
+  pathname,
+  titleMap,
+}: {
+  pathname?: string;
+  titleMap?: Record<string, string>;
+}) {
+  const title = titleMap?.[pathname ?? ""];
 
   return (
     <header className="sticky top-0 z-10 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
@@ -254,7 +268,7 @@ export function TopBar({ titleMap }: { titleMap?: Map<string, string> }) {
           className="my-auto mr-2 data-[orientation=vertical]:h-4"
           orientation="vertical"
         />
-        <p className="font-bold">{title}</p>
+        {title ? <p className="font-bold">{title}</p> : null}
       </div>
     </header>
   );
@@ -264,26 +278,27 @@ type DashboardProps = AppSidebarProps & {
   children: ReactNode;
   sideBarClassName?: string;
   className?: string;
-  titleMap?: Map<string, string>;
+  titleMap?: Record<string, string>;
 };
 
 export function Dashboard({
   children,
   sideBarClassName,
   className,
+  pathname,
   titleMap,
   ...props
 }: DashboardProps) {
   return (
     <SidebarProvider>
-      <AppSidebar className={sideBarClassName} collapsible="icon" {...props} />
+      <AppSidebar className={sideBarClassName} pathname={pathname} {...props} />
       <main
         className={cn(
           "flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto",
           className
         )}
       >
-        <TopBar titleMap={titleMap} />
+        <TopBar pathname={pathname} titleMap={titleMap} />
         {children}
       </main>
     </SidebarProvider>
