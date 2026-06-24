@@ -34,7 +34,7 @@ function Drawer({
   direction = "bottom",
   swipeDirection,
   modal = true,
-  resizable = true,
+  resizable = false,
   snapPoints,
   ...props
 }: DrawerProps) {
