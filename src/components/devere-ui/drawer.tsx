@@ -1,8 +1,10 @@
 import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
-import type * as React from "react";
+import { type ComponentProps, createContext, useContext } from "react";
 import { cn } from "@/lib/utils";
 
 type DrawerDirection = "top" | "right" | "bottom" | "left";
+
+const DrawerContext = createContext(true);
 
 const drawerPopupClassName =
   "group/drawer-content data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(100%+2px))] data-ending-style:data-[swipe-direction=left]:transform-[translateX(calc(-100%-2px))] data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(100%+2px))] data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(-100%-2px))] data-starting-style:data-[swipe-direction=down]:transform-[translateY(calc(100%+2px))] data-starting-style:data-[swipe-direction=left]:transform-[translateX(calc(-100%-2px))] data-starting-style:data-[swipe-direction=right]:transform-[translateX(calc(100%+2px))] data-starting-style:data-[swipe-direction=up]:transform-[translateY(calc(-100%-2px))] data-[swipe-direction=down]:transform-[translateY(calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))] data-[swipe-direction=left]:transform-[translateX(var(--drawer-swipe-movement-x))] data-[swipe-direction=right]:transform-[translateX(var(--drawer-swipe-movement-x))] data-[swipe-direction=up]:transform-[translateY(calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))] pointer-events-auto fixed z-50 flex h-full flex-col bg-transparent text-sm outline-none transition-transform duration-200 data-[swipe-direction=down]:pb-[max(0px,calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))] data-[swipe-direction=down]:inset-x-2 data-[swipe-direction=up]:inset-x-2 data-[swipe-direction=left]:inset-y-2 data-[swipe-direction=right]:inset-y-2 data-[swipe-direction=up]:top-2 data-[swipe-direction=right]:right-2 data-[swipe-direction=down]:bottom-2 data-[swipe-direction=left]:left-2 max-h-[calc(100vh-16px)] data-[swipe-direction=left]:w-3/4 data-[swipe-direction=right]:w-3/4 data-starting-style:data-[swipe-direction=down]:pb-0 data-ending-style:data-[swipe-direction=down]:pb-0 data-swiping:duration-0 data-[swipe-direction=left]:sm:max-w-sm data-[swipe-direction=right]:sm:max-w-sm";
@@ -25,14 +27,18 @@ type DrawerProps = Omit<DrawerPrimitive.Root.Props, "swipeDirection"> & {
 function Drawer({
   direction = "bottom",
   swipeDirection,
+  modal = true,
   ...props
 }: DrawerProps) {
   return (
-    <DrawerPrimitive.Root
-      data-slot="drawer"
-      swipeDirection={swipeDirection ?? directionToSwipeDirection[direction]}
-      {...props}
-    />
+    <DrawerContext.Provider value={modal === true}>
+      <DrawerPrimitive.Root
+        data-slot="drawer"
+        modal={modal}
+        swipeDirection={swipeDirection ?? directionToSwipeDirection[direction]}
+        {...props}
+      />
+    </DrawerContext.Provider>
   );
 }
 
@@ -77,7 +83,7 @@ function DrawerViewport({
   );
 }
 
-function DrawerHandle({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerHandle({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(
@@ -99,13 +105,18 @@ function DrawerContent({
   className,
   children,
   showHandle = true,
+  showOverlay,
   ...props
 }: DrawerPrimitive.Popup.Props & {
   showHandle?: boolean;
+  showOverlay?: boolean;
 }) {
+  const isModal = useContext(DrawerContext);
+  const shouldShowOverlay = showOverlay ?? isModal;
+
   return (
     <DrawerPortal>
-      <DrawerOverlay />
+      {shouldShowOverlay ? <DrawerOverlay /> : null}
       <DrawerViewport>
         <DrawerPrimitive.Popup
           className={cn(drawerPopupClassName, className)}
@@ -124,7 +135,7 @@ function DrawerContent({
   );
 }
 
-function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerHeader({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(
@@ -137,7 +148,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DrawerBody({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerBody({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(
@@ -150,7 +161,7 @@ function DrawerBody({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
+function DrawerFooter({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn("mt-auto flex flex-col gap-2 p-4", className)}

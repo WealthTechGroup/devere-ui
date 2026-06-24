@@ -101,6 +101,25 @@ function DrawerDemo() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      <Drawer direction="right" disablePointerDismissal modal={false}>
+        <DrawerTrigger render={<Button variant="outline" />}>
+          <PanelRightOpenIcon />
+          Open non-modal drawer
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Non-modal drawer</DrawerTitle>
+            <DrawerDescription>
+              The page stays interactive while this drawer is open. Use close or
+              swipe to dismiss it.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <DrawerClose render={<Button />}>Done</DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
