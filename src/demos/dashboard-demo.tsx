@@ -17,9 +17,35 @@ import { cn } from "@/lib/utils";
 
 const TRAILING_SLASH_PATTERN = /\/$/;
 
+const DEMO_ROUTES = ["", "dashboard", "reports", "settings"] as const;
+
 function normalizePath(path: string) {
   return path.replace(TRAILING_SLASH_PATTERN, "") || "/";
 }
+
+function demoPath(segment: (typeof DEMO_ROUTES)[number] = "") {
+  const base = import.meta.env.BASE_URL;
+  return segment ? `${base}${segment}` : base;
+}
+
+function resolveDemoPathname(pathname: string) {
+  const normalized = normalizePath(pathname);
+
+  for (const segment of DEMO_ROUTES) {
+    if (normalizePath(demoPath(segment)) === normalized) {
+      return demoPath(segment);
+    }
+  }
+
+  return demoPath();
+}
+
+const titleMap: Record<string, string> = {
+  [demoPath()]: "Dashboard",
+  [demoPath("dashboard")]: "Dashboard",
+  [demoPath("reports")]: "Reports",
+  [demoPath("settings")]: "Settings",
+};
 
 type DemoNavigationContextValue = {
   navigate: (to: string) => void;
@@ -58,17 +84,10 @@ function DemoLink({
   );
 }
 
-const titleMap: Record<string, string> = {
-  "/": "Dashboard",
-  "/dashboard": "Dashboard",
-  "/reports": "Reports",
-  "/settings": "Settings",
-};
-
-const DEMO_PATHNAME = "/";
-
 export function DashboardDemo() {
-  const [pathname, setPathname] = useState(DEMO_PATHNAME);
+  const [pathname, setPathname] = useState(() =>
+    resolveDemoPathname(window.location.pathname)
+  );
 
   const navigate = useCallback(
     (to: string) => {
@@ -83,7 +102,7 @@ export function DashboardDemo() {
 
   useEffect(() => {
     const onPopState = () => {
-      setPathname(window.location.pathname);
+      setPathname(resolveDemoPathname(window.location.pathname));
     };
 
     window.addEventListener("popstate", onPopState);
@@ -94,6 +113,7 @@ export function DashboardDemo() {
     <DemoNavigationContext.Provider value={{ navigate }}>
       <div className="relative h-150 w-full">
         <Dashboard
+          homePath={demoPath()}
           items={[
             {
               label: "Overview",
@@ -101,17 +121,17 @@ export function DashboardDemo() {
                 {
                   title: "Home",
                   icon: <HomeIcon />,
-                  to: "/",
+                  to: demoPath(),
                 },
                 {
                   title: "Dashboard",
                   icon: <LayoutDashboardIcon />,
-                  to: "/dashboard",
+                  to: demoPath("dashboard"),
                 },
                 {
                   title: "Reports",
                   icon: <FileTextIcon />,
-                  to: "/reports",
+                  to: demoPath("reports"),
                 },
               ],
             },
@@ -121,7 +141,7 @@ export function DashboardDemo() {
                 {
                   title: "Settings",
                   icon: <SettingsIcon />,
-                  to: "/settings",
+                  to: demoPath("settings"),
                 },
               ],
             },
