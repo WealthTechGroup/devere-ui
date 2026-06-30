@@ -40,13 +40,6 @@ function resolveDemoPathname(pathname: string) {
   return demoPath();
 }
 
-const titleMap: Record<string, string> = {
-  [demoPath()]: "Dashboard",
-  [demoPath("dashboard")]: "Dashboard",
-  [demoPath("reports")]: "Reports",
-  [demoPath("settings")]: "Settings",
-};
-
 type DemoNavigationContextValue = {
   navigate: (to: string) => void;
 };
@@ -154,7 +147,6 @@ export function DashboardDemo() {
             console.log("signOut");
           }}
           title="WealthTech Group"
-          titleMap={titleMap}
           user={{
             initials: "WG",
             name: "WealthTech Group",

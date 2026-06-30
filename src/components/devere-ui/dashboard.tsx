@@ -55,6 +55,31 @@ type NavLinkComponent = ComponentType<NavLinkProps>;
 
 export type { NavItem, NavLinkComponent, NavLinkProps };
 
+const TRAILING_SLASH_PATTERN = /\/$/;
+
+function normalizePath(path: string) {
+  return path.replace(TRAILING_SLASH_PATTERN, "") || "/";
+}
+
+function resolveNavTitle(
+  pathname: string | undefined,
+  items: { label?: string; items: NavItem[] }[]
+) {
+  if (!pathname) {
+    return;
+  }
+
+  const normalizedPathname = normalizePath(pathname);
+
+  for (const group of items) {
+    for (const item of group.items) {
+      if (normalizePath(item.to) === normalizedPathname) {
+        return item.title;
+      }
+    }
+  }
+}
+
 function resolveLinkRender(
   LinkComponent: NavLinkComponent,
   to: string,
@@ -65,7 +90,7 @@ function resolveLinkRender(
 }
 
 const navMenuButtonClassName =
-  "border not-data-active:border-transparent data-active:border-border data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
+  "border group-data-[collapsible=icon]:p-1.75! not-data-active:border-transparent data-active:border-border data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
 
 type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   items: { label?: string; items: NavItem[] }[];
@@ -255,12 +280,12 @@ function SidebarMenuTrigger({
 
 export function TopBar({
   pathname,
-  titleMap,
+  items,
 }: {
   pathname?: string;
-  titleMap?: Record<string, string>;
+  items: { label?: string; items: NavItem[] }[];
 }) {
-  const title = titleMap?.[pathname ?? ""];
+  const title = resolveNavTitle(pathname, items);
 
   return (
     <header className="sticky top-0 z-10 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
@@ -280,7 +305,6 @@ type DashboardProps = AppSidebarProps & {
   children: ReactNode;
   sideBarClassName?: string;
   className?: string;
-  titleMap?: Record<string, string>;
 };
 
 export function Dashboard({
@@ -288,19 +312,24 @@ export function Dashboard({
   sideBarClassName,
   className,
   pathname,
-  titleMap,
+  items,
   ...props
 }: DashboardProps) {
   return (
     <SidebarProvider>
-      <AppSidebar className={sideBarClassName} pathname={pathname} {...props} />
+      <AppSidebar
+        className={sideBarClassName}
+        items={items}
+        pathname={pathname}
+        {...props}
+      />
       <main
         className={cn(
           "flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto",
           className
         )}
       >
-        <TopBar pathname={pathname} titleMap={titleMap} />
+        <TopBar items={items} pathname={pathname} />
         {children}
       </main>
     </SidebarProvider>
