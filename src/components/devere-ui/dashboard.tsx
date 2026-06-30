@@ -283,7 +283,7 @@ export function TopBar({
   const title = resolveNavTitle(pathname, items);
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
+    <header className="sticky top-0 z-20 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
       <div className="flex min-w-0 max-w-full flex-1 items-center gap-2 px-4">
         <SidebarMenuTrigger className="-ml-1" />
         <Separator
@@ -312,12 +312,7 @@ export function Dashboard({
   return (
     <SidebarProvider>
       <AppSidebar className={sideBarClassName} items={items} {...props} />
-      <main
-        className={cn(
-          "flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto",
-          className
-        )}
-      >
+      <main className={cn("flex min-w-0 flex-1 flex-col", className)}>
         <TopBar items={items} />
         {children}
       </main>
