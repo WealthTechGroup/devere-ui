@@ -1,11 +1,6 @@
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronsUpDownIcon, LogOutIcon, MenuIcon } from "lucide-react";
-import {
-  type ComponentProps,
-  type ComponentType,
-  createElement,
-  type HTMLAttributes,
-  type ReactNode,
-} from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/devere-ui/button";
 import { ThemeToggle } from "@/components/devere-ui/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -46,14 +41,7 @@ type NavItem = {
   badge?: NavBadge;
 };
 
-type NavLinkProps = HTMLAttributes<HTMLElement> & {
-  to: string;
-  pathname?: string;
-};
-
-type NavLinkComponent = ComponentType<NavLinkProps>;
-
-export type { NavItem, NavLinkComponent, NavLinkProps };
+export type { NavItem };
 
 const TRAILING_SLASH_PATTERN = /\/$/;
 
@@ -62,13 +50,9 @@ function normalizePath(path: string) {
 }
 
 function resolveNavTitle(
-  pathname: string | undefined,
+  pathname: string,
   items: { label?: string; items: NavItem[] }[]
 ) {
-  if (!pathname) {
-    return;
-  }
-
   const normalizedPathname = normalizePath(pathname);
 
   for (const group of items) {
@@ -80,22 +64,23 @@ function resolveNavTitle(
   }
 }
 
-function resolveLinkRender(
-  LinkComponent: NavLinkComponent,
-  to: string,
-  pathname?: string
-) {
-  return (props: HTMLAttributes<HTMLElement>) =>
-    createElement(LinkComponent, { ...props, to, pathname });
+function NavLink({ to, resetScroll, ...props }: ComponentProps<typeof Link>) {
+  return (
+    <Link
+      activeOptions={{ exact: true }}
+      activeProps={{ "data-active": true }}
+      resetScroll={resetScroll}
+      to={to}
+      {...props}
+    />
+  );
 }
 
 const navMenuButtonClassName =
-  "border group-data-[collapsible=icon]:p-1.75! not-data-active:border-transparent data-active:border-border data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
+  "font-medium data-active:ring-1 data-active:ring-foreground/10 data-active:dark:ring-foreground/15 data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
 
 type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   items: { label?: string; items: NavItem[] }[];
-  linkComponent: NavLinkComponent;
-  pathname?: string;
   user: {
     initials: string;
     name: string;
@@ -103,19 +88,20 @@ type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   };
   signOut: () => void;
   logo: string;
+  title: string;
   homePath?: string;
+  resetScroll?: boolean;
 };
 
 export function AppSidebar({
   title,
   items,
-  linkComponent,
-  pathname,
   user,
   signOut,
   logo,
-  homePath = "/",
   collapsible = "icon",
+  homePath = "/",
+  resetScroll = true,
   ...props
 }: AppSidebarProps) {
   const { toggleSidebar } = useSidebar();
@@ -135,7 +121,9 @@ export function AppSidebar({
             <SidebarMenuButton
               className="data-active:bg-transparent data-active:text-foreground group-data-[collapsible=icon]:p-1.5!"
               onClick={handleSidebarClick}
-              render={resolveLinkRender(linkComponent, homePath, pathname)}
+              render={(props) => (
+                <NavLink resetScroll={resetScroll} to={homePath} {...props} />
+              )}
             >
               <img alt="Dashboard Logo" height={24} src={logo} width={24} />
               <span className="font-bold">{title}</span>
@@ -150,12 +138,18 @@ export function AppSidebar({
               <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             )}
             <SidebarMenu>
-              {group.items.map((item) => (
-                <SidebarMenuItem key={item.to}>
+              {group.items.map((item, index) => (
+                <SidebarMenuItem key={`${item.to}-${index.toString()}`}>
                   <SidebarMenuButton
                     className={navMenuButtonClassName}
                     onClick={handleSidebarClick}
-                    render={resolveLinkRender(linkComponent, item.to, pathname)}
+                    render={(props) => (
+                      <NavLink
+                        resetScroll={resetScroll}
+                        to={item.to}
+                        {...props}
+                      />
+                    )}
                     tooltip={item.title}
                   >
                     {item.icon}
@@ -201,7 +195,7 @@ export function NavUser({ user, signOut }: NavUserProps) {
             }
           >
             <Avatar>
-              <AvatarFallback className="bg-primary/15 font-semibold text-primary">
+              <AvatarFallback className="bg-primary/15 font-semibold text-primary text-xs">
                 {user.initials}
               </AvatarFallback>
             </Avatar>
@@ -219,9 +213,9 @@ export function NavUser({ user, signOut }: NavUserProps) {
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
-                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <div className="flex items-center gap-2 px-1 py-1.5 text-left">
                   <Avatar>
-                    <AvatarFallback className="bg-primary/15 font-semibold text-primary">
+                    <AvatarFallback className="bg-primary/15 font-semibold text-primary text-xs">
                       {user.initials}
                     </AvatarFallback>
                   </Avatar>
@@ -279,12 +273,13 @@ function SidebarMenuTrigger({
 }
 
 export function TopBar({
-  pathname,
   items,
 }: {
-  pathname?: string;
   items: { label?: string; items: NavItem[] }[];
 }) {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const title = resolveNavTitle(pathname, items);
 
   return (
@@ -311,25 +306,20 @@ export function Dashboard({
   children,
   sideBarClassName,
   className,
-  pathname,
   items,
+  homePath,
   ...props
 }: DashboardProps) {
   return (
     <SidebarProvider>
-      <AppSidebar
-        className={sideBarClassName}
-        items={items}
-        pathname={pathname}
-        {...props}
-      />
+      <AppSidebar className={sideBarClassName} items={items} {...props} />
       <main
         className={cn(
           "flex h-full w-full min-w-0 flex-1 flex-col overflow-y-auto",
           className
         )}
       >
-        <TopBar items={items} pathname={pathname} />
+        <TopBar items={items} />
         {children}
       </main>
     </SidebarProvider>

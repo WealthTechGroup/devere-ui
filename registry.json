@@ -220,7 +220,7 @@
       "name": "dashboard",
       "type": "registry:ui",
       "title": "Dashboard",
-      "description": "A dashboard layout with sidebar navigation, top bar, user menu and injectable nav links for your router.",
+      "description": "A dashboard layout with sidebar navigation, top bar, user menu and TanStack Router links.",
       "registryDependencies": [
         "avatar",
         "@devere-ui/button",
@@ -229,7 +229,7 @@
         "sidebar",
         "@devere-ui/theme-toggle"
       ],
-      "dependencies": ["lucide-react"],
+      "dependencies": ["@tanstack/react-router", "lucide-react"],
       "files": [
         {
           "path": "src/components/devere-ui/dashboard.tsx",
