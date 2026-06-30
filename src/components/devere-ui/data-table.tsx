@@ -866,7 +866,10 @@ function ControlledDataTable<TData, TValue>({
 
   return (
     <div
-      className={cn("flex min-w-0 flex-col gap-4 overflow-hidden", className)}
+      className={cn(
+        "flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4",
+        className
+      )}
     >
       <DataTableToolbar
         filters={filters}
@@ -877,12 +880,22 @@ function ControlledDataTable<TData, TValue>({
         table={table}
       />
 
-      <div className="relative min-w-0 max-w-full overflow-auto rounded-3xl border">
+      <div className="relative min-h-0 min-w-0 max-w-full flex-1 overflow-auto rounded-3xl border">
         {isLoading && (
           <LinearProgress
             aria-label="Loading rows"
             className="absolute inset-x-0 top-10.25 z-30"
           />
+        )}
+        {!table.getRowModel().rows?.length && (
+          <div
+            className="absolute top-10.25 right-0 bottom-0 left-0 flex flex-1 flex-col items-center justify-center bg-muted"
+            role="status"
+          >
+            <p className="text-center text-muted-foreground text-sm">
+              {isLoading ? "Loading…" : "No results."}
+            </p>
+          </div>
         )}
         <TableComponent
           className={
@@ -946,13 +959,8 @@ function ControlledDataTable<TData, TValue>({
                 </TableRow>
               ))
             ) : (
-              <TableRow>
-                <TableCell
-                  className="h-24 bg-muted text-center"
-                  colSpan={columns.length}
-                >
-                  {isLoading ? "Loading…" : "No results."}
-                </TableCell>
+              <TableRow aria-hidden className="invisible h-24">
+                <TableCell className="h-24" colSpan={columns.length} />
               </TableRow>
             )}
           </TableBody>

@@ -108,7 +108,6 @@ function TasksDataTableDemo() {
 
   return (
     <DataTable
-      className="w-full"
       columns={columns}
       data={data}
       defaultPageSize={DEFAULT_PAGE_SIZE}
