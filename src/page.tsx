@@ -13,10 +13,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ButtonDemo } from "@/demos/button-demo";
+import { CircularProgressDemo } from "@/demos/circular-progress-demo";
 import { DashboardDemo } from "@/demos/dashboard-demo";
 import { DialogDemo } from "@/demos/dialog-demo";
 import { DrawerDemo } from "@/demos/drawer-demo";
 import { FormattersDemo } from "@/demos/formatters-demo";
+import { LinearProgressDemo } from "@/demos/linear-progress-demo";
 import { LoadingScreenDemo } from "@/demos/loading-screen-demo";
 import { MicrosoftLoginDemo } from "@/demos/microsoft-login-demo";
 import { NotFoundDemo } from "@/demos/not-found-demo";
@@ -52,6 +54,20 @@ const items: RegistryItem[] = [
     description:
       "A full-area loading state with a spinning ring and optional centered logo.",
     demo: <LoadingScreenDemo />,
+  },
+  {
+    name: "circular-progress",
+    title: "Circular Progress",
+    description:
+      "An indeterminate circular spinner recreating the Material UI CircularProgress animation in self-contained CSS, with lucide-style defaults.",
+    demo: <CircularProgressDemo />,
+  },
+  {
+    name: "linear-progress",
+    title: "Linear Progress",
+    description:
+      "An indeterminate linear progress bar with two color bars sweeping across a faint track, recreated in self-contained CSS.",
+    demo: <LinearProgressDemo />,
   },
   {
     name: "theme-toggle",

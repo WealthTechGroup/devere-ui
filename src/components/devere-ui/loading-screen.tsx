@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 
+import { CircularProgress } from "@/components/devere-ui/circular-progress";
 import { cn } from "@/lib/utils";
 
 export function LoadingScreen({
@@ -20,7 +21,11 @@ export function LoadingScreen({
         className="relative flex shrink-0 items-center justify-center"
         style={{ width: size + 14, height: size + 14 }}
       >
-        <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary/50 border-t-transparent" />
+        <CircularProgress
+          className="absolute inset-0 text-primary"
+          size={size + 14}
+          thickness={2}
+        />
         {logoUrl && (
           <img alt="deVere Group" height={size} src={logoUrl} width={size} />
         )}

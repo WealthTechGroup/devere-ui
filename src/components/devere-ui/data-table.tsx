@@ -14,6 +14,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
   type SortingState,
   useReactTable,
   type VisibilityState,
@@ -35,11 +36,11 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { LinearProgress } from "@/components/devere-ui/linear-progress";
 import {
   TableBody,
   TableCell,
   Table as TableComponent,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -79,6 +80,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useDataTableSearch } from "@/lib/data-table-url-state";
 import { cn } from "@/lib/utils";
 
 const CSV_NEEDS_QUOTE = /[",\n\r]/;
@@ -145,6 +147,11 @@ interface DataTableColumnHeaderProps<TData, TValue>
 }
 
 function getColumnLabel<TData>(column: Column<TData, unknown>): string {
+  const metaLabel = (column.columnDef.meta as { label?: unknown } | undefined)
+    ?.label;
+  if (typeof metaLabel === "string") {
+    return metaLabel;
+  }
   const header = column.columnDef.header;
   if (typeof header === "string") {
     return header;
@@ -229,6 +236,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  showCount?: boolean;
   title?: string;
 }
 
@@ -236,9 +244,13 @@ export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  showCount = true,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues();
-  const selectedValues = new Set(column?.getFilterValue() as string[]);
+  const filterValue = column?.getFilterValue();
+  const selectedValues = new Set(
+    Array.isArray(filterValue) ? (filterValue as string[]) : []
+  );
 
   return (
     <Popover>
@@ -322,7 +334,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         <option.icon className="size-4 text-muted-foreground" />
                       )}
                       <span>{option.label}</span>
-                      {facets?.get(option.value) && (
+                      {showCount && facets?.get(option.value) && (
                         <span className="absolute right-2 flex size-4 items-center justify-center font-mono text-muted-foreground text-xs">
                           {facets.get(option.value)}
                         </span>
@@ -352,11 +364,13 @@ export function DataTableFacetedFilter<TData, TValue>({
 }
 
 interface DataTablePaginationProps<TData> {
+  pageSizeOptions?: number[];
   table: Table<TData>;
 }
 
 export function DataTablePagination<TData>({
   table,
+  pageSizeOptions = [20, 50, 100, 200],
 }: DataTablePaginationProps<TData>) {
   return (
     <div className="flex items-center px-2">
@@ -377,7 +391,7 @@ export function DataTablePagination<TData>({
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent className="min-w-[80px]" side="top">
-              {[20, 50, 100, 200].map((pageSize) => (
+              {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
@@ -448,16 +462,20 @@ export interface DataTableFilterProps {
 
 interface DataTableToolbarProps<TData> {
   filters?: DataTableFilterProps[];
+  onResetFilters?: () => void;
   searchColumn?: string;
   searchVisibleColumns?: boolean;
+  serverSide?: boolean;
   table: Table<TData>;
 }
 
 export function DataTableToolbar<TData>({
   table,
   filters,
+  onResetFilters,
   searchColumn,
   searchVisibleColumns,
+  serverSide,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
@@ -471,6 +489,7 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 flex-wrap items-center gap-2">
         {(searchColumn || searchVisibleColumns) && (
           <Input
+            aria-label="Filter rows"
             className="h-8 w-[150px] lg:w-[250px]"
             id="data-table-search"
             onChange={(event) => {
@@ -491,14 +510,20 @@ export function DataTableToolbar<TData>({
             column={table.getColumn(filter.column)}
             key={filter.title}
             options={filter.options}
+            showCount={!serverSide}
             title={filter.title}
           />
         ))}
         {isFiltered && (
           <Button
             onClick={() => {
-              table.resetColumnFilters();
-              table.resetGlobalFilter();
+              if (onResetFilters) {
+                onResetFilters();
+                return;
+              }
+
+              table.setColumnFilters([]);
+              table.setGlobalFilter("");
             }}
             size="sm"
             variant="ghost"
@@ -617,35 +642,114 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   columnVisibility?: VisibilityState;
   data: TData[];
+  defaultPageSize?: number;
   filters?: DataTableFilterProps[];
   frozenColumns?: string[];
   globalFilter?: string;
+  isLoading?: boolean;
+  onPaginationChange?: OnChangeFn<PaginationState>;
+  onResetFilters?: () => void;
   onRowClick?: (row: TData) => void;
+  pageSizeOptions?: number[];
+  pagination?: PaginationState;
+  /**
+   * Total number of rows across all pages, used for the page count in
+   * `serverSide` mode. Falls back to `data.length` when omitted.
+   */
+  rowCount?: number;
   rowSelection?: RowSelectionState;
   searchColumn?: string;
   searchVisibleColumns?: boolean;
+  /**
+   * Paginate, sort and filter on the server. The table renders `data` as-is
+   * (one page) instead of slicing client-side, and faceted filters hide their
+   * (per-page, misleading) counts.
+   */
+  serverSide?: boolean;
   setColumnFilters?: OnChangeFn<ColumnFiltersState>;
   setColumnVisibility?: OnChangeFn<VisibilityState>;
   setGlobalFilter?: OnChangeFn<string>;
   setRowSelection?: OnChangeFn<RowSelectionState>;
   setSorting?: OnChangeFn<SortingState>;
   sorting?: SortingState;
+  /**
+   * Persist pagination, sorting, filters and search in the URL. Requires a
+   * TanStack Router context. The value is read once and must not change at
+   * runtime. Use {@link useDataTableSearch} in a parent to read that state.
+   */
+  syncWithUrl?: boolean;
 }
 
-export function DataTable<TData, TValue>({
+function useDataTableControlledState({
+  columnFilters,
+  defaultPageSize,
+  globalFilter,
+  onPaginationChange,
+  onResetFilters,
+  pageSizeOptions,
+  pagination,
+  setColumnFilters,
+  setGlobalFilter,
+  setSorting,
+  sorting,
+}: Pick<
+  DataTableProps<unknown, unknown>,
+  | "columnFilters"
+  | "defaultPageSize"
+  | "globalFilter"
+  | "onPaginationChange"
+  | "onResetFilters"
+  | "pageSizeOptions"
+  | "pagination"
+  | "setColumnFilters"
+  | "setGlobalFilter"
+  | "setSorting"
+  | "sorting"
+>) {
+  const [innerColumnFilters, setInnerColumnFilters] =
+    useState<ColumnFiltersState>([]);
+  const [innerSorting, setInnerSorting] = useState<SortingState>([]);
+  const [innerGlobalFilter, setInnerGlobalFilter] = useState("");
+  const [innerPagination, setInnerPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: defaultPageSize ?? pageSizeOptions?.[0] ?? 10,
+  });
+
+  return {
+    columnFilters: columnFilters ?? innerColumnFilters,
+    globalFilter: globalFilter ?? innerGlobalFilter,
+    onPaginationChange: onPaginationChange ?? setInnerPagination,
+    onResetFilters,
+    pagination: pagination ?? innerPagination,
+    setColumnFilters: setColumnFilters ?? setInnerColumnFilters,
+    setGlobalFilter: setGlobalFilter ?? setInnerGlobalFilter,
+    setSorting: setSorting ?? setInnerSorting,
+    sorting: sorting ?? innerSorting,
+  };
+}
+
+function ControlledDataTable<TData, TValue>({
   columns,
   data,
+  defaultPageSize,
   filters,
   searchColumn,
   searchVisibleColumns,
   className,
+  isLoading,
   onRowClick,
+  rowCount,
   rowSelection,
+  serverSide,
   columnVisibility,
   columnFilters,
   frozenColumns,
   sorting,
   globalFilter,
+  pagination,
+  pageSizeOptions,
+  onPaginationChange,
+  onResetFilters,
   setGlobalFilter,
   setRowSelection,
   setColumnVisibility,
@@ -655,16 +759,42 @@ export function DataTable<TData, TValue>({
   const [innerRowSelection, setInnerRowSelection] = useState({});
   const [innerColumnVisibility, setInnerColumnVisibility] =
     useState<VisibilityState>({});
-  const [innerColumnFilters, setInnerColumnFilters] =
-    useState<ColumnFiltersState>([]);
-  const [innerSorting, setInnerSorting] = useState<SortingState>([]);
-  const [innerGlobalFilter, setInnerGlobalFilter] = useState("");
+  const {
+    columnFilters: resolvedColumnFilters,
+    globalFilter: resolvedGlobalFilter,
+    onPaginationChange: resolvedOnPaginationChange,
+    onResetFilters: resolvedOnResetFilters,
+    pagination: resolvedPagination,
+    setColumnFilters: resolvedSetColumnFilters,
+    setGlobalFilter: resolvedSetGlobalFilter,
+    setSorting: resolvedSetSorting,
+    sorting: resolvedSorting,
+  } = useDataTableControlledState({
+    columnFilters,
+    defaultPageSize,
+    globalFilter,
+    onPaginationChange,
+    onResetFilters,
+    pageSizeOptions,
+    pagination,
+    setColumnFilters,
+    setGlobalFilter,
+    setSorting,
+    sorting,
+  });
 
-  const usePagination = true;
+  const isPaginationControlled =
+    pagination !== undefined || onPaginationChange !== undefined;
+  const isServerSide = serverSide ?? false;
 
   const table = useReactTable({
     data,
     columns,
+    autoResetPageIndex: !isPaginationControlled,
+    manualFiltering: isServerSide,
+    manualPagination: isServerSide,
+    manualSorting: isServerSide,
+    rowCount: isServerSide ? (rowCount ?? data.length) : undefined,
     defaultColumn: {
       filterFn: (row, columnId, filterValue) => {
         const cellValue = String(row.getValue(columnId) ?? "")
@@ -704,26 +834,28 @@ export function DataTable<TData, TValue>({
     getColumnCanGlobalFilter: (column) =>
       column.getIsVisible() && typeof column.accessorFn !== "undefined",
     state: {
-      sorting: sorting ?? innerSorting,
+      sorting: resolvedSorting,
       columnVisibility: columnVisibility ?? innerColumnVisibility,
       rowSelection: rowSelection ?? innerRowSelection,
-      columnFilters: columnFilters ?? innerColumnFilters,
-      globalFilter: globalFilter ?? innerGlobalFilter,
+      columnFilters: resolvedColumnFilters,
+      globalFilter: resolvedGlobalFilter,
+      pagination: resolvedPagination,
       columnPinning: {
         left: frozenColumns ?? [],
       },
     },
     initialState: {
       pagination: {
-        pageSize: 200,
+        pageSize: resolvedPagination.pageSize,
       },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection ?? setInnerRowSelection,
-    onSortingChange: setSorting ?? setInnerSorting,
-    onColumnFiltersChange: setColumnFilters ?? setInnerColumnFilters,
+    onSortingChange: resolvedSetSorting,
+    onColumnFiltersChange: resolvedSetColumnFilters,
     onColumnVisibilityChange: setColumnVisibility ?? setInnerColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter ?? setInnerGlobalFilter,
+    onGlobalFilterChange: resolvedSetGlobalFilter,
+    onPaginationChange: resolvedOnPaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -736,94 +868,123 @@ export function DataTable<TData, TValue>({
     <div className={cn("flex min-w-0 flex-col gap-4", className)}>
       <DataTableToolbar
         filters={filters}
+        onResetFilters={resolvedOnResetFilters}
         searchColumn={searchColumn}
         searchVisibleColumns={searchVisibleColumns}
+        serverSide={serverSide}
         table={table}
       />
-      <div className="min-w-0 max-w-full overflow-auto rounded-3xl border">
-        <TableComponent
-          className={
-            frozenColumns ? "border-separate border-spacing-0" : undefined
-          }
-          containerClassName="overflow-visible"
-        >
-          <TableHeader className="before:z-21">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    className={cn(
-                      "sticky top-0 z-30 bg-card",
-                      getPinnedColumnClass(header.column, true)
-                    )}
-                    colSpan={header.colSpan}
-                    key={header.id}
-                    style={getPinnedColumnStyle(header.column)}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  className={cn(
-                    "group bg-background hover:bg-card data-[state=selected]:bg-muted",
-                    frozenColumns && "border-b-0"
-                  )}
-                  data-state={row.getIsSelected() && "selected"}
-                  key={row.id}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
+      <div className="relative min-w-0 max-w-full">
+        {isLoading && (
+          <LinearProgress
+            aria-label="Loading rows"
+            className="absolute inset-x-0 top-10.25 z-30"
+          />
+        )}
+        <div className="max-w-full overflow-auto rounded-3xl border">
+          <TableComponent
+            className={
+              frozenColumns ? "border-separate border-spacing-0" : undefined
+            }
+            containerClassName="overflow-visible"
+          >
+            <TableHeader className="before:z-21">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
                       className={cn(
-                        frozenColumns && "border-b",
-                        getPinnedColumnClass(cell.column)
+                        "sticky top-0 z-30 bg-card",
+                        getPinnedColumnClass(header.column, true)
                       )}
-                      key={cell.id}
-                      style={getPinnedColumnStyle(cell.column)}
+                      colSpan={header.colSpan}
+                      key={header.id}
+                      style={getPinnedColumnStyle(header.column)}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  className="h-24 bg-muted text-center"
-                  colSpan={columns.length}
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-          {!usePagination && (
-            <TableFooter className="sticky bottom-0 z-10">
-              <TableRow>
-                <TableCell colSpan={columns.length}>
-                  Showing {table.getRowModel().rows.length} of {data.length}{" "}
-                  row(s).
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          )}
-        </TableComponent>
+              ))}
+            </TableHeader>
+            <TableBody
+              className={cn(isLoading && "opacity-50 transition-opacity")}
+            >
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    className={cn(
+                      "group bg-background hover:bg-card data-[state=selected]:bg-muted",
+                      frozenColumns && "border-b-0"
+                    )}
+                    data-state={row.getIsSelected() && "selected"}
+                    key={row.id}
+                    onClick={() => onRowClick?.(row.original)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        className={cn(
+                          frozenColumns && "border-b",
+                          getPinnedColumnClass(cell.column)
+                        )}
+                        key={cell.id}
+                        style={getPinnedColumnStyle(cell.column)}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    className="h-24 bg-muted text-center"
+                    colSpan={columns.length}
+                  >
+                    {isLoading ? "Loading…" : "No results."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </TableComponent>
+        </div>
       </div>
-      {usePagination && <DataTablePagination table={table} />}
+      <DataTablePagination pageSizeOptions={pageSizeOptions} table={table} />
     </div>
   );
+}
+
+function UrlSyncedDataTable<TData, TValue>(
+  props: DataTableProps<TData, TValue>
+) {
+  const urlState = useDataTableSearch({
+    defaultPageSize: props.defaultPageSize,
+  });
+  return <ControlledDataTable {...props} {...urlState} />;
+}
+
+/**
+ * A TanStack Table wrapper with sorting, filtering, pagination, column
+ * visibility and CSV export.
+ *
+ * State is uncontrolled by default. Pass `syncWithUrl` to persist it in the URL
+ * (requires a TanStack Router context), or pass the individual controlled
+ * state props for full control.
+ */
+export function DataTable<TData, TValue>({
+  syncWithUrl,
+  ...props
+}: DataTableProps<TData, TValue>) {
+  if (syncWithUrl) {
+    return <UrlSyncedDataTable {...props} />;
+  }
+  return <ControlledDataTable {...props} />;
 }

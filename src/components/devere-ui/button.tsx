@@ -1,5 +1,5 @@
-import { Loader2Icon } from "lucide-react";
 import type * as React from "react";
+import { CircularProgress } from "@/components/devere-ui/circular-progress";
 import { Button as ButtonPrimitive } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,8 +22,8 @@ function Button({
       {...props}
     >
       {loading && (
-        <Loader2Icon
-          className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin"
+        <CircularProgress
+          className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2"
           data-loader
         />
       )}

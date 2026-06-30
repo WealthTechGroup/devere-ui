@@ -8,8 +8,7 @@
       "type": "registry:ui",
       "title": "Button",
       "description": "A button built on the shadcn button that adds a loading state with a spinner and optional loading text.",
-      "registryDependencies": ["button"],
-      "dependencies": ["lucide-react"],
+      "registryDependencies": ["button", "@devere-ui/circular-progress"],
       "files": [
         {
           "path": "src/components/devere-ui/button.tsx",
@@ -23,6 +22,7 @@
       "type": "registry:ui",
       "title": "Loading Screen",
       "description": "A full-area loading state with a spinning ring and optional centered logo.",
+      "registryDependencies": ["@devere-ui/circular-progress"],
       "files": [
         {
           "path": "src/components/devere-ui/loading-screen.tsx",
@@ -110,6 +110,32 @@
       ]
     },
     {
+      "name": "linear-progress",
+      "type": "registry:ui",
+      "title": "Linear Progress",
+      "description": "An indeterminate linear progress bar with two color bars sweeping across a faint track, recreated in self-contained CSS.",
+      "files": [
+        {
+          "path": "src/components/devere-ui/linear-progress.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/linear-progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "circular-progress",
+      "type": "registry:ui",
+      "title": "Circular Progress",
+      "description": "An indeterminate circular spinner recreating the Material UI CircularProgress animation in self-contained CSS, with lucide-style defaults.",
+      "files": [
+        {
+          "path": "src/components/devere-ui/circular-progress.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/circular-progress.tsx"
+        }
+      ]
+    },
+    {
       "name": "table",
       "type": "registry:ui",
       "title": "Table",
@@ -135,14 +161,26 @@
         "input",
         "popover",
         "select",
-        "separator"
+        "separator",
+        "@devere-ui/linear-progress"
       ],
-      "dependencies": ["@tanstack/react-table", "lucide-react", "cmdk"],
+      "dependencies": [
+        "@tanstack/react-router",
+        "@tanstack/react-table",
+        "lucide-react",
+        "cmdk",
+        "zod"
+      ],
       "files": [
         {
           "path": "src/components/devere-ui/table.tsx",
           "type": "registry:ui",
           "target": "@components/devere-ui/table.tsx"
+        },
+        {
+          "path": "src/lib/data-table-url-state.ts",
+          "type": "registry:lib",
+          "target": "@lib/data-table-url-state.ts"
         },
         {
           "path": "src/components/devere-ui/data-table.tsx",

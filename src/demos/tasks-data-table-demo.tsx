@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useState } from "react";
 
 import {
   DataTable,
@@ -6,79 +7,10 @@ import {
   type DataTableFilterProps,
 } from "@/components/devere-ui/data-table";
 import { Badge } from "@/components/ui/badge";
+import { useDataTableSearch } from "@/lib/data-table-url-state";
+import { fetchTasks, type Task } from "./data/fake-tasks-api";
 
-type Task = {
-  id: string;
-  label: string;
-  priority: "low" | "medium" | "high";
-  status: "backlog" | "canceled" | "done" | "in progress" | "todo";
-  title: string;
-};
-
-const tasks: Task[] = [
-  {
-    id: "TASK-8782",
-    title:
-      "You can't compress the program without quantifying the open-source SSD pixel!",
-    label: "Documentation",
-    status: "in progress",
-    priority: "medium",
-  },
-  {
-    id: "TASK-7878",
-    title:
-      "Try to calculate the EXE feed, maybe it will index the multi-byte pixel!",
-    label: "Documentation",
-    status: "backlog",
-    priority: "medium",
-  },
-  {
-    id: "TASK-7839",
-    title: "We need to bypass the neural TCP card!",
-    label: "Bug",
-    status: "todo",
-    priority: "high",
-  },
-  {
-    id: "TASK-5562",
-    title:
-      "The SAS interface is down, bypass the open-source pixel so we can back up the PNG bandwidth!",
-    label: "Feature",
-    status: "backlog",
-    priority: "medium",
-  },
-  {
-    id: "TASK-1280",
-    title:
-      "Use the digital TLS panel, then you can transmit the haptic system!",
-    label: "Bug",
-    status: "done",
-    priority: "high",
-  },
-  {
-    id: "TASK-1138",
-    title:
-      "Generating the driver won't do anything, we need to quantify the 1080p SMTP bandwidth!",
-    label: "Feature",
-    status: "in progress",
-    priority: "medium",
-  },
-  {
-    id: "TASK-7184",
-    title: "We need to program the back-end THX pixel!",
-    label: "Feature",
-    status: "todo",
-    priority: "low",
-  },
-  {
-    id: "TASK-5160",
-    title:
-      "Calculating the bus won't do anything, we need to navigate the back-end JSON protocol!",
-    label: "Documentation",
-    status: "in progress",
-    priority: "high",
-  },
-];
+const DEFAULT_PAGE_SIZE = 10;
 
 const statusOptions = [
   { label: "Backlog", value: "backlog" },
@@ -129,8 +61,6 @@ const columns: ColumnDef<Task>[] = [
       const status = row.getValue("status") as Task["status"];
       return <Badge variant="secondary">{status}</Badge>;
     },
-    filterFn: (row, id, value) =>
-      (value as string[]).includes(row.getValue(id)),
   },
   {
     accessorKey: "priority",
@@ -141,8 +71,6 @@ const columns: ColumnDef<Task>[] = [
       const priority = row.getValue("priority") as Task["priority"];
       return <Badge variant="outline">{priority}</Badge>;
     },
-    filterFn: (row, id, value) =>
-      (value as string[]).includes(row.getValue(id)),
   },
 ];
 
@@ -152,13 +80,45 @@ const filters: DataTableFilterProps[] = [
 ];
 
 function TasksDataTableDemo() {
+  const { searchParams } = useDataTableSearch({
+    defaultPageSize: DEFAULT_PAGE_SIZE,
+  });
+
+  const [data, setData] = useState<Task[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+
+    fetchTasks(searchParams).then((result) => {
+      if (!active) {
+        return;
+      }
+      setData(result.rows);
+      setTotal(result.total);
+      setIsLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [searchParams]);
+
   return (
     <DataTable
       className="w-full"
       columns={columns}
-      data={tasks}
+      data={data}
+      defaultPageSize={DEFAULT_PAGE_SIZE}
       filters={filters}
-      searchColumn="title"
+      isLoading={isLoading}
+      pageSizeOptions={[10, 25, 50, 100]}
+      rowCount={total}
+      searchVisibleColumns
+      serverSide
+      syncWithUrl
     />
   );
 }
