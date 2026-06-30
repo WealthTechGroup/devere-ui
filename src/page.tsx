@@ -36,6 +36,7 @@ interface RegistryItem {
   description: string;
   expandable?: boolean;
   name: string;
+  overflow?: "hidden" | "auto";
   previewClassName?: string;
   title: string;
 }
@@ -121,6 +122,7 @@ const items: RegistryItem[] = [
     demo: <TasksDataTableDemo />,
     expandable: true,
     previewClassName: "items-start justify-start overflow-auto",
+    overflow: "hidden",
   },
   {
     name: "formatters",
@@ -178,6 +180,7 @@ function RegistryCard({ item }: { item: RegistryItem }) {
         <DemoFrame
           className={item.previewClassName}
           expandable={item.expandable}
+          overflow={item.overflow}
         >
           {item.demo}
         </DemoFrame>

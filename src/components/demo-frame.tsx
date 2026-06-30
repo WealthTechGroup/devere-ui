@@ -9,10 +9,12 @@ function DemoFrame({
   children,
   className,
   expandable = false,
+  overflow = "auto",
 }: {
   children: ReactNode;
   className?: string;
   expandable?: boolean;
+  overflow?: "hidden" | "auto";
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -33,7 +35,7 @@ function DemoFrame({
           )}
           <CardContent
             className={cn(
-              "flex min-h-0 flex-1 flex-col overflow-auto",
+              `flex min-h-0 flex-1 flex-col ${overflow === "hidden" ? "overflow-hidden" : "overflow-auto"}`,
               expandable && "pt-8"
             )}
           >

@@ -133,13 +133,13 @@ body {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 scrollbar-thumb-muted-foreground scrollbar-track-transparent;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    @apply font-sans scrollbar-gutter-stable scrollbar-track-muted scrollbar-thumb-muted-foreground;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {

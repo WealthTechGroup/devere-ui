@@ -865,7 +865,9 @@ function ControlledDataTable<TData, TValue>({
   });
 
   return (
-    <div className={cn("flex min-w-0 flex-col gap-4", className)}>
+    <div
+      className={cn("flex min-w-0 flex-col gap-4 overflow-hidden", className)}
+    >
       <DataTableToolbar
         filters={filters}
         onResetFilters={resolvedOnResetFilters}
@@ -874,88 +876,87 @@ function ControlledDataTable<TData, TValue>({
         serverSide={serverSide}
         table={table}
       />
-      <div className="relative min-w-0 max-w-full">
+
+      <div className="relative min-w-0 max-w-full overflow-auto rounded-3xl border">
         {isLoading && (
           <LinearProgress
             aria-label="Loading rows"
             className="absolute inset-x-0 top-10.25 z-30"
           />
         )}
-        <div className="max-w-full overflow-auto rounded-3xl border">
-          <TableComponent
-            className={
-              frozenColumns ? "border-separate border-spacing-0" : undefined
-            }
-            containerClassName="overflow-visible"
+        <TableComponent
+          className={
+            frozenColumns ? "border-separate border-spacing-0" : undefined
+          }
+          containerClassName="overflow-visible"
+        >
+          <TableHeader className="before:z-21">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    className={cn(
+                      "sticky top-0 z-30 bg-card",
+                      getPinnedColumnClass(header.column, true)
+                    )}
+                    colSpan={header.colSpan}
+                    key={header.id}
+                    style={getPinnedColumnStyle(header.column)}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody
+            className={cn(isLoading && "opacity-50 transition-opacity")}
           >
-            <TableHeader className="before:z-21">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  className={cn(
+                    "group bg-background hover:bg-card data-[state=selected]:bg-muted",
+                    frozenColumns && "border-b-0"
+                  )}
+                  data-state={row.getIsSelected() && "selected"}
+                  key={row.id}
+                  onClick={() => onRowClick?.(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
                       className={cn(
-                        "sticky top-0 z-30 bg-card",
-                        getPinnedColumnClass(header.column, true)
+                        frozenColumns && "border-b",
+                        getPinnedColumnClass(cell.column)
                       )}
-                      colSpan={header.colSpan}
-                      key={header.id}
-                      style={getPinnedColumnStyle(header.column)}
+                      key={cell.id}
+                      style={getPinnedColumnStyle(cell.column)}
                     >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody
-              className={cn(isLoading && "opacity-50 transition-opacity")}
-            >
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    className={cn(
-                      "group bg-background hover:bg-card data-[state=selected]:bg-muted",
-                      frozenColumns && "border-b-0"
-                    )}
-                    data-state={row.getIsSelected() && "selected"}
-                    key={row.id}
-                    onClick={() => onRowClick?.(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        className={cn(
-                          frozenColumns && "border-b",
-                          getPinnedColumnClass(cell.column)
-                        )}
-                        key={cell.id}
-                        style={getPinnedColumnStyle(cell.column)}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    className="h-24 bg-muted text-center"
-                    colSpan={columns.length}
-                  >
-                    {isLoading ? "Loading…" : "No results."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </TableComponent>
-        </div>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  className="h-24 bg-muted text-center"
+                  colSpan={columns.length}
+                >
+                  {isLoading ? "Loading…" : "No results."}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </TableComponent>
       </div>
       <DataTablePagination pageSizeOptions={pageSizeOptions} table={table} />
     </div>

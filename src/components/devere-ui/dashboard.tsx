@@ -68,7 +68,7 @@ const navMenuButtonClassName =
   "border not-data-active:border-transparent data-active:border-border data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
 
 type AppSidebarProps = ComponentProps<typeof Sidebar> & {
-  items: { label: string; items: NavItem[] }[];
+  items: { label?: string; items: NavItem[] }[];
   linkComponent: NavLinkComponent;
   pathname?: string;
   user: {
@@ -119,9 +119,11 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {items.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+        {items.map((group, index) => (
+          <SidebarGroup key={`${group.label ?? "group"}-${index.toString()}`}>
+            {!!group.label && (
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            )}
             <SidebarMenu>
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.to}>
