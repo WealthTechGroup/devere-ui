@@ -18,6 +18,7 @@ import { DialogDemo } from "@/demos/dialog-demo";
 import { DrawerDemo } from "@/demos/drawer-demo";
 import { FormattersDemo } from "@/demos/formatters-demo";
 import { LoadingScreenDemo } from "@/demos/loading-screen-demo";
+import { MicrosoftLoginDemo } from "@/demos/microsoft-login-demo";
 import { NotFoundDemo } from "@/demos/not-found-demo";
 import { TableDemo } from "@/demos/table-demo";
 import { TabsDemo } from "@/demos/tabs-demo";
@@ -118,6 +119,14 @@ const items: RegistryItem[] = [
     title: "Dashboard",
     description: "A dashboard with a sidebar and a main content area.",
     demo: <DashboardDemo />,
+    previewClassName: "px-0 -my-(--card-spacing)",
+  },
+  {
+    name: "microsoft-login",
+    title: "Microsoft Login",
+    description:
+      "A centered sign-in page with a Microsoft SSO button, title, description and admin contact note.",
+    demo: <MicrosoftLoginDemo />,
     previewClassName: "px-0 -my-(--card-spacing)",
   },
 ];

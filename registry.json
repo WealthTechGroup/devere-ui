@@ -165,6 +165,20 @@
       ]
     },
     {
+      "name": "microsoft-login",
+      "type": "registry:ui",
+      "title": "Microsoft Login",
+      "description": "A centered sign-in page with a Microsoft SSO button, title, description and admin contact note.",
+      "registryDependencies": ["@devere-ui/button", "card"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/microsoft-login.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/microsoft-login.tsx"
+        }
+      ]
+    },
+    {
       "name": "dashboard",
       "type": "registry:ui",
       "title": "Dashboard",
