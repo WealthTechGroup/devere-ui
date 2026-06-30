@@ -307,7 +307,6 @@ export function Dashboard({
   sideBarClassName,
   className,
   items,
-  homePath,
   ...props
 }: DashboardProps) {
   return (
