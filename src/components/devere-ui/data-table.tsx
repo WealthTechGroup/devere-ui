@@ -630,7 +630,7 @@ function getPinnedColumnClass<TData, TValue>(
     "relative",
     isHeader
       ? "z-40"
-      : "z-20 bg-background transition-colors group-hover:bg-card group-data-[state=selected]:bg-muted",
+      : "z-20 bg-background transition-colors group-hover:bg-muted group-data-[state=selected]:bg-muted dark:group-hover:bg-card",
     column.getIsLastColumn("left") &&
       "after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border after:content-['']"
   );
@@ -909,7 +909,7 @@ function ControlledDataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     className={cn(
-                      "sticky top-0 z-30 bg-card",
+                      "sticky top-0 z-30",
                       getPinnedColumnClass(header.column, true)
                     )}
                     colSpan={header.colSpan}
@@ -934,7 +934,7 @@ function ControlledDataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   className={cn(
-                    "group bg-background hover:bg-card data-[state=selected]:bg-muted",
+                    "group bg-background in-[tbody]:hover:bg-muted data-[state=selected]:bg-muted dark:in-[tbody]:hover:bg-card",
                     frozenColumns && "border-b-0"
                   )}
                   data-state={row.getIsSelected() && "selected"}

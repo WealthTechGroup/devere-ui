@@ -25,7 +25,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       className={cn(
-        "relative bg-card before:absolute before:right-0 before:-bottom-px before:left-0 before:h-px before:bg-border [&_tr]:border-0",
+        "relative bg-muted before:absolute before:right-0 before:-bottom-px before:left-0 before:h-px before:bg-border dark:bg-card [&_tr]:border-0",
         className
       )}
       data-slot="table-header"
@@ -48,7 +48,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
       className={cn(
-        "bg-card font-medium before:absolute before:-top-px before:right-0 before:left-0 before:h-px before:bg-border [&>tr]:last:border-b-0",
+        "bg-muted font-medium before:absolute before:-top-px before:right-0 before:left-0 before:h-px before:bg-border dark:bg-card [&>tr]:last:border-b-0",
         className
       )}
       data-slot="table-footer"
@@ -74,7 +74,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       className={cn(
-        "h-10 whitespace-nowrap px-3 text-left align-middle font-medium text-foreground has-[[role=checkbox]]:pr-0",
+        "h-10 whitespace-nowrap bg-muted px-3 text-left align-middle font-medium text-foreground has-[[role=checkbox]]:pr-0 dark:bg-card",
         className
       )}
       data-slot="table-head"

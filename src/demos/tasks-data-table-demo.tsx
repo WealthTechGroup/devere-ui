@@ -112,6 +112,7 @@ function TasksDataTableDemo() {
       data={data}
       defaultPageSize={DEFAULT_PAGE_SIZE}
       filters={filters}
+      frozenColumns={["id"]}
       isLoading={isLoading}
       pageSizeOptions={[10, 25, 50, 100]}
       rowCount={total}
