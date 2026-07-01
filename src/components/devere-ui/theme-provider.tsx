@@ -9,6 +9,7 @@ type ThemeProviderProps = {
   defaultTheme?: Theme;
   storageKey?: string;
   disableTransitionOnChange?: boolean;
+  disableChangeOnKeyDown?: boolean;
 };
 
 type ThemeProviderState = {
@@ -82,6 +83,7 @@ export function ThemeProvider({
   defaultTheme = "system",
   storageKey = "theme",
   disableTransitionOnChange = true,
+  disableChangeOnKeyDown = true,
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
@@ -140,6 +142,10 @@ export function ThemeProvider({
   }, [theme, applyTheme]);
 
   React.useEffect(() => {
+    if (disableChangeOnKeyDown) {
+      return;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
         return;
@@ -177,7 +183,7 @@ export function ThemeProvider({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [storageKey]);
+  }, [storageKey, disableChangeOnKeyDown]);
 
   React.useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {

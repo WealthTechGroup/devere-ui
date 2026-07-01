@@ -9,7 +9,7 @@ import { router } from "@/router";
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
-    <ThemeProvider>
+    <ThemeProvider disableChangeOnKeyDown={false}>
       <TooltipProvider>
         <RouterProvider router={router} />
       </TooltipProvider>

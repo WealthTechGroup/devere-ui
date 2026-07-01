@@ -298,23 +298,32 @@ export function TopBar({
 
 type DashboardProps = AppSidebarProps & {
   children: ReactNode;
+  mainClassName?: string;
   sideBarClassName?: string;
   className?: string;
 };
 
 export function Dashboard({
   children,
+  mainClassName,
   sideBarClassName,
   className,
   items,
   ...props
 }: DashboardProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-full min-h-0">
       <AppSidebar className={sideBarClassName} items={items} {...props} />
-      <main className={cn("flex min-w-0 flex-1 flex-col", className)}>
+      <main
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 flex-col has-data-disable-dashboard-scroll:max-h-dvh",
+          mainClassName
+        )}
+      >
         <TopBar items={items} />
-        {children}
+        <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+          {children}
+        </div>
       </main>
     </SidebarProvider>
   );

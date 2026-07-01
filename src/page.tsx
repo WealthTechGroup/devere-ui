@@ -137,7 +137,8 @@ const items: RegistryItem[] = [
     title: "Dashboard",
     description: "A dashboard with a sidebar and a main content area.",
     demo: <DashboardDemo />,
-    previewClassName: "px-0 -my-(--card-spacing)",
+    previewClassName:
+      "items-start justify-start overflow-hidden px-0 -my-(--card-spacing)",
   },
   {
     name: "microsoft-login",

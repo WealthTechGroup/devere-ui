@@ -66,6 +66,7 @@ const demoLayoutRoute = createRootRoute({
     <Dashboard
       items={dashboardItems}
       logo={logo}
+      mainClassName="overflow-hidden"
       resetScroll={false}
       sideBarClassName="absolute h-full"
       signOut={() => {
