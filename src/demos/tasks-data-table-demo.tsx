@@ -80,10 +80,7 @@ const filters: DataTableFilterProps[] = [
 ];
 
 function TasksDataTableDemo() {
-  const { searchParams } = useDataTableSearch({
-    defaultPageSize: DEFAULT_PAGE_SIZE,
-  });
-
+  const { searchParams } = useDataTableSearch();
   const [data, setData] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);

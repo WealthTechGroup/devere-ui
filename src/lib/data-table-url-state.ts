@@ -6,7 +6,7 @@ import type {
   SortingState,
 } from "@tanstack/react-table";
 import { functionalUpdate } from "@tanstack/react-table";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { z } from "zod";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -136,6 +136,7 @@ function compactSearch(search: DataTableSearch): DataTableSearch {
  * ```
  */
 export function useDataTableSearch(options: UseDataTableSearchOptions = {}) {
+  const ownsPageSize = options.defaultPageSize != null;
   const defaultPageSize = options.defaultPageSize ?? DEFAULT_PAGE_SIZE;
   const router = useRouter();
   const navigate = useNavigate();
@@ -143,13 +144,14 @@ export function useDataTableSearch(options: UseDataTableSearchOptions = {}) {
     select: (state) => state.location.search,
   });
 
+  const parsedSearch = useMemo(
+    () => dataTableSearchSchema.parse(rawSearch),
+    [rawSearch]
+  );
+
   const tableState = useMemo(
-    () =>
-      searchToTableState(
-        dataTableSearchSchema.parse(rawSearch),
-        defaultPageSize
-      ),
-    [defaultPageSize, rawSearch]
+    () => searchToTableState(parsedSearch, defaultPageSize),
+    [defaultPageSize, parsedSearch]
   );
 
   const updateTableState = useCallback(
@@ -169,6 +171,19 @@ export function useDataTableSearch(options: UseDataTableSearchOptions = {}) {
     },
     [defaultPageSize, navigate, router]
   );
+
+  // When the caller owns the page size (i.e. the DataTable passes an explicit
+  // `defaultPageSize`), write it into the URL if it isn't there yet so other
+  // readers of this hook stay in sync without knowing the default themselves.
+  useEffect(() => {
+    if (!ownsPageSize || parsedSearch.per_page != null) {
+      return;
+    }
+    updateTableState((current) => ({
+      ...current,
+      pagination: { ...current.pagination, pageSize: defaultPageSize },
+    }));
+  }, [defaultPageSize, ownsPageSize, parsedSearch.per_page, updateTableState]);
 
   const onPaginationChange: OnChangeFn<PaginationState> = useCallback(
     (updater) => {

@@ -122,7 +122,7 @@ const demoRouter = createRouter({
 
 export function DashboardDemo() {
   return (
-    <div className="relative h-150 w-full">
+    <div className="relative h-150 w-full [&_header]:rounded-tr-4xl">
       <RouterProvider router={demoRouter} />
     </div>
   );
