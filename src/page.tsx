@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { BadgeDemo } from "@/demos/badge-demo";
 import { ButtonDemo } from "@/demos/button-demo";
 import { CircularProgressDemo } from "@/demos/circular-progress-demo";
 import { DashboardDemo } from "@/demos/dashboard-demo";
@@ -42,6 +43,14 @@ interface RegistryItem {
 }
 
 const items: RegistryItem[] = [
+  {
+    name: "badge",
+    title: "Badge",
+    description:
+      "A pill-shaped badge with semantic variants plus every Tailwind color at sm, md and lg sizes.",
+    demo: <BadgeDemo />,
+    previewClassName: "items-start justify-start",
+  },
   {
     name: "button",
     title: "Button",

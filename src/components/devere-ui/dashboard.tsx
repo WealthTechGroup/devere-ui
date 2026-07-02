@@ -67,7 +67,7 @@ function resolveNavTitle(
 function NavLink({ to, resetScroll, ...props }: ComponentProps<typeof Link>) {
   return (
     <Link
-      activeOptions={{ exact: true }}
+      activeOptions={{ exact: true, includeSearch: false, includeHash: false }}
       activeProps={{ "data-active": true }}
       resetScroll={resetScroll}
       to={to}
@@ -283,7 +283,7 @@ export function TopBar({
   const title = resolveNavTitle(pathname, items);
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
+    <header className="sticky top-0 z-40 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
       <div className="flex min-w-0 max-w-full flex-1 items-center gap-2 px-4">
         <SidebarMenuTrigger className="-ml-1" />
         <Separator
@@ -312,7 +312,7 @@ export function Dashboard({
   ...props
 }: DashboardProps) {
   return (
-    <SidebarProvider className="h-full min-h-0">
+    <SidebarProvider className="min-h-svh">
       <AppSidebar className={sideBarClassName} items={items} {...props} />
       <main
         className={cn(

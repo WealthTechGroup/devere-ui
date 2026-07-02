@@ -1,16 +1,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
-
+import { Badge } from "@/components/devere-ui/badge";
 import {
   DataTable,
   DataTableColumnHeader,
   type DataTableFilterProps,
+  type DataTableSearchParams,
+  dataTableSearchParamsSchema,
 } from "@/components/devere-ui/data-table";
-import { Badge } from "@/components/ui/badge";
-import { useDataTableSearch } from "@/lib/data-table-url-state";
 import { fetchTasks, type Task } from "./data/fake-tasks-api";
-
-const DEFAULT_PAGE_SIZE = 10;
 
 const statusOptions = [
   { label: "Backlog", value: "backlog" },
@@ -59,7 +57,7 @@ const columns: ColumnDef<Task>[] = [
     ),
     cell: ({ row }) => {
       const status = row.getValue("status") as Task["status"];
-      return <Badge variant="secondary">{status}</Badge>;
+      return <Badge color="green">{status}</Badge>;
     },
   },
   {
@@ -69,7 +67,7 @@ const columns: ColumnDef<Task>[] = [
     ),
     cell: ({ row }) => {
       const priority = row.getValue("priority") as Task["priority"];
-      return <Badge variant="outline">{priority}</Badge>;
+      return <Badge color="blue">{priority}</Badge>;
     },
   },
 ];
@@ -80,7 +78,10 @@ const filters: DataTableFilterProps[] = [
 ];
 
 function TasksDataTableDemo() {
-  const { searchParams } = useDataTableSearch();
+  const [searchParams, setSearchParams] = useState<DataTableSearchParams>(
+    dataTableSearchParamsSchema.parse({})
+  );
+
   const [data, setData] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,13 +108,13 @@ function TasksDataTableDemo() {
     <DataTable
       columns={columns}
       data={data}
-      defaultPageSize={DEFAULT_PAGE_SIZE}
       filters={filters}
       frozenColumns={["id"]}
       isLoading={isLoading}
+      onSearchParamsChange={setSearchParams}
       pageSizeOptions={[10, 25, 50, 100]}
       rowCount={total}
-      searchVisibleColumns
+      searchColumn="title"
       serverSide
       syncWithUrl
     />

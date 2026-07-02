@@ -1,4 +1,4 @@
-import type { DataTableSearch } from "@/lib/data-table-url-state";
+import type { DataTableSearchParams } from "@/components/devere-ui/data-table";
 import tasksData from "./tasks.json";
 
 export type Task = {
@@ -17,29 +17,26 @@ export type FetchTasksResult = {
 const tasks = tasksData as Task[];
 
 const API_DELAY_MS = 1000;
-const DEFAULT_PER_PAGE = 10;
 
 function cellValue(task: Task, key: string): string {
   return String(task[key as keyof Task] ?? "").toLowerCase();
 }
 
-function matchesFilter(task: Task, id: string, value: unknown): boolean {
+function matchesFilter(task: Task, id: string, value: string[]): boolean {
   const cell = cellValue(task, id);
 
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return true;
-    }
-    return value.some((option) => String(option).toLowerCase() === cell);
+  if (value.length === 0) {
+    return true;
   }
 
-  const query = String(value ?? "")
-    .trim()
-    .toLowerCase();
-  return query ? cell.includes(query) : true;
+  if (value.length === 1) {
+    return cell.includes(value[0].trim().toLowerCase());
+  }
+
+  return value.some((option) => option.trim().toLowerCase() === cell);
 }
 
-function applyFilters(rows: Task[], search: DataTableSearch): Task[] {
+function applyFilters(rows: Task[], search: DataTableSearchParams): Task[] {
   let result = rows;
 
   for (const filter of search.filters ?? []) {
@@ -60,7 +57,7 @@ function applyFilters(rows: Task[], search: DataTableSearch): Task[] {
   return result;
 }
 
-function applySorting(rows: Task[], search: DataTableSearch): Task[] {
+function applySorting(rows: Task[], search: DataTableSearchParams): Task[] {
   if (!(search.sort_by && search.sort)) {
     return rows;
   }
@@ -73,14 +70,16 @@ function applySorting(rows: Task[], search: DataTableSearch): Task[] {
 
 /**
  * Simulates a paginated backend over the local dataset. Accepts the exact
- * `searchParams` returned by `useDataTableSearch` and resolves after a delay so
- * the table's loading state is visible.
+ * `searchParams` emitted by the table's `onSearchParamsChange` and resolves
+ * after a delay so the table's loading state is visible.
  */
-export function fetchTasks(search: DataTableSearch): Promise<FetchTasksResult> {
+export function fetchTasks(
+  search: DataTableSearchParams
+): Promise<FetchTasksResult> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const filtered = applySorting(applyFilters(tasks, search), search);
-      const perPage = search.per_page ?? DEFAULT_PER_PAGE;
+      const perPage = search.per_page;
       const page = search.page ?? 1;
       const start = (page - 1) * perPage;
 

@@ -4,6 +4,20 @@
   "homepage": "https://wealthtechgroup.github.io/devere-ui",
   "items": [
     {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "A pill-shaped badge with semantic variants plus every Tailwind palette color at sm, md and lg sizes.",
+      "dependencies": ["@base-ui/react", "class-variance-authority"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/badge.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/badge.tsx"
+        }
+      ]
+    },
+    {
       "name": "button",
       "type": "registry:ui",
       "title": "Button",
@@ -154,7 +168,7 @@
       "title": "Data Table",
       "description": "A TanStack Table wrapper with sorting, filtering, pagination, column visibility and CSV export. Built from the shadcn tasks example.",
       "registryDependencies": [
-        "badge",
+        "@devere-ui/badge",
         "button",
         "command",
         "dropdown-menu",
@@ -176,11 +190,6 @@
           "path": "src/components/devere-ui/table.tsx",
           "type": "registry:ui",
           "target": "@components/devere-ui/table.tsx"
-        },
-        {
-          "path": "src/lib/data-table-url-state.ts",
-          "type": "registry:lib",
-          "target": "@lib/data-table-url-state.ts"
         },
         {
           "path": "src/components/devere-ui/data-table.tsx",

@@ -117,6 +117,15 @@ primitives they build on.
 - **Validate before publishing**: run `npm run registry:validate`, then
   `npm run registry:build`.
 
+## Component State
+
+- Complex components own their state internally (the component is the single
+  source of truth). Expose an `on<Thing>Change` callback to observe it and an
+  `initial<Thing>` prop to seed it, rather than accepting fully controlled
+  state props. See `data-table.tsx` (`onSearchParamsChange` / `initialSearch`).
+- URL sync reads the URL once on mount (for the initial state), then only
+  writes to it. The component state never re-reads from the URL afterwards.
+
 ## Testing
 
 - Write assertions inside `it()` or `test()` blocks

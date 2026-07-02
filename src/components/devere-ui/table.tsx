@@ -1,4 +1,5 @@
-import type * as React from "react";
+import type React from "react";
+import { isValidElement } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -110,20 +111,24 @@ function TableCaption({
 }
 
 function TruncatedCell({
-  value,
+  render,
   className,
   ...props
 }: {
-  value: string;
+  render: unknown;
   className?: string;
 } & React.ComponentProps<"div">) {
   return (
     <div
       className={cn("max-w-[220px] truncate", className)}
-      title={value}
+      title={typeof render === "string" ? render : undefined}
       {...props}
     >
-      {value}
+      {isValidElement(render) || typeof render === "string" ? (
+        render
+      ) : (
+        <span className="text-muted-foreground italic">No data</span>
+      )}
     </div>
   );
 }
