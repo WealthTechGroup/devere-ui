@@ -1,5 +1,5 @@
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import type { Column, OnChangeFn, Table } from "@tanstack/react-table";
+import type { Column, OnChangeFn, Row, Table } from "@tanstack/react-table";
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -99,6 +99,85 @@ function normalizeFilterValue(value: unknown): string[] {
     return [value.trim()];
   }
   return [];
+}
+
+function defaultColumnFilterFn<TData>(
+  row: Row<TData>,
+  columnId: string,
+  filterValue: unknown
+): boolean {
+  const values = normalizeFilterValue(filterValue);
+  if (values.length === 0) {
+    return true;
+  }
+
+  const cellValue = String(row.getValue(columnId) ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (values.length === 1) {
+    return cellValue.includes(values[0].trim().toLowerCase());
+  }
+
+  return values.some((value) => value.trim().toLowerCase() === cellValue);
+}
+
+function globalColumnFilterFn<TData>(
+  row: Row<TData>,
+  columnId: string,
+  filterValue: unknown
+): boolean {
+  const query = String(filterValue ?? "")
+    .trim()
+    .toLowerCase();
+  if (!query) {
+    return true;
+  }
+  return String(row.getValue(columnId) ?? "")
+    .trim()
+    .toLowerCase()
+    .includes(query);
+}
+
+function getTableMinWidth<TData, TValue>(
+  columns: ColumnDef<TData, TValue>[],
+  fixedLayout?: boolean
+): number | undefined {
+  if (!fixedLayout) {
+    return;
+  }
+  const total = columns.reduce((sum, column) => sum + (column.size ?? 0), 0);
+  return total > 0 ? total : undefined;
+}
+
+function getStickyHeaderOffsetClass(size: "sm" | "md" | "lg"): string {
+  if (size === "sm") {
+    return "top-[41px]";
+  }
+  if (size === "lg") {
+    return "top-[49px]";
+  }
+  return "top-[45px]";
+}
+
+function getDataTableHeadHeightClass(size: "sm" | "md" | "lg"): string {
+  if (size === "sm") {
+    return "h-[40px]";
+  }
+  if (size === "lg") {
+    return "h-[48px]";
+  }
+  return "h-[44px]";
+}
+
+function getDataTableCellPaddingClass(size: "sm" | "md" | "lg"): string {
+  if (size === "sm") {
+    return "py-2";
+  }
+  if (size === "lg") {
+    return "py-4";
+  }
+  return "py-3";
 }
 
 function parseJson(value: unknown): unknown {
@@ -353,16 +432,16 @@ export function DataTableColumnHeader<TData, TValue>({
   }
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-2", className)} data-interactive>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
             <Button
-              className="-ml-3 h-8 data-[state=open]:bg-accent"
+              className="h-8 min-w-0 max-w-full data-[state=open]:bg-accent"
               size="sm"
               variant="ghost"
             >
-              <span>{title}</span>
+              <span className="truncate">{title}</span>
               {
                 {
                   desc: <ArrowDown />,
@@ -786,19 +865,48 @@ export function DataTableViewOptions<TData>({
   );
 }
 
-function getPinnedColumnStyle<TData, TValue>(
-  column: Column<TData, TValue>
+function getColumnStyle<TData, TValue>(
+  column: Column<TData, TValue>,
+  fixedLayout?: boolean
 ): React.CSSProperties {
   const pinned = column.getIsPinned();
-  if (!pinned) {
+  const size = column.columnDef.size;
+  const hasFixedSize = size !== undefined;
+
+  if (!fixedLayout) {
+    if (!pinned) {
+      return {};
+    }
+
+    return {
+      left: pinned === "left" ? `${column.getStart("left")}px` : undefined,
+      maxWidth: column.getSize(),
+      minWidth: column.getSize(),
+      position: "sticky",
+      width: column.getSize(),
+    };
+  }
+
+  if (!(hasFixedSize || pinned)) {
     return {};
   }
+
+  const widthStyle: React.CSSProperties = hasFixedSize
+    ? { minWidth: size }
+    : {
+        maxWidth: column.getSize(),
+        minWidth: column.getSize(),
+        width: column.getSize(),
+      };
+
+  if (!pinned) {
+    return widthStyle;
+  }
+
   return {
+    ...widthStyle,
     left: pinned === "left" ? `${column.getStart("left")}px` : undefined,
-    maxWidth: column.getSize(),
-    minWidth: column.getSize(),
     position: "sticky",
-    width: column.getSize(),
   };
 }
 
@@ -826,6 +934,8 @@ interface DataTableProps<TData, TValue> {
   defaultPageSize?: number;
   exportable?: boolean;
   filters?: DataTableFilterProps[];
+  /** Use table-layout: fixed and honour column `size` defs for min widths. */
+  fixedLayout?: boolean;
   frozenColumns?: string[];
   /**
    * Seeds the initial sorting, filters, search and pagination. Read once on
@@ -976,6 +1086,7 @@ function DataTableImpl<TData, TValue>({
   serverSide,
   frozenColumns,
   pageSizeOptions,
+  fixedLayout,
   size = "md",
 }: DataTableProps<TData, TValue>) {
   const resolvedDefaultPageSize =
@@ -996,6 +1107,10 @@ function DataTableImpl<TData, TValue>({
   });
 
   const isServerSide = serverSide ?? false;
+  const tableMinWidth = useMemo(
+    () => getTableMinWidth(columns, fixedLayout),
+    [columns, fixedLayout]
+  );
 
   const table = useReactTable({
     data,
@@ -1006,35 +1121,9 @@ function DataTableImpl<TData, TValue>({
     manualSorting: isServerSide,
     rowCount: isServerSide ? (rowCount ?? data.length) : undefined,
     defaultColumn: {
-      filterFn: (row, columnId, filterValue) => {
-        const values = normalizeFilterValue(filterValue);
-        if (values.length === 0) {
-          return true;
-        }
-
-        const cellValue = String(row.getValue(columnId) ?? "")
-          .trim()
-          .toLowerCase();
-
-        if (values.length === 1) {
-          return cellValue.includes(values[0].trim().toLowerCase());
-        }
-
-        return values.some((value) => value.trim().toLowerCase() === cellValue);
-      },
+      filterFn: defaultColumnFilterFn,
     },
-    globalFilterFn: (row, columnId, filterValue) => {
-      const query = String(filterValue ?? "")
-        .trim()
-        .toLowerCase();
-      if (!query) {
-        return true;
-      }
-      return String(row.getValue(columnId) ?? "")
-        .trim()
-        .toLowerCase()
-        .includes(query);
-    },
+    globalFilterFn: globalColumnFilterFn,
     getColumnCanGlobalFilter: (column) =>
       column.getIsVisible() && typeof column.accessorFn !== "undefined",
     state: {
@@ -1086,9 +1175,7 @@ function DataTableImpl<TData, TValue>({
             aria-label="Loading rows"
             className={cn(
               "absolute inset-x-0 z-31",
-              size === "sm" && "top-[41px]",
-              size === "md" && "top-[45px]",
-              size === "lg" && "top-[49px]"
+              getStickyHeaderOffsetClass(size)
             )}
           />
         )}
@@ -1096,9 +1183,7 @@ function DataTableImpl<TData, TValue>({
           <div
             className={cn(
               "absolute right-0 bottom-0 left-0 flex flex-1 flex-col items-center justify-center bg-muted",
-              size === "sm" && "top-[41px]",
-              size === "md" && "top-[45px]",
-              size === "lg" && "top-[49px]"
+              getStickyHeaderOffsetClass(size)
             )}
             role="status"
           >
@@ -1108,26 +1193,44 @@ function DataTableImpl<TData, TValue>({
           </div>
         )}
         <TableComponent
-          className={
-            frozenColumns ? "border-separate border-spacing-0" : undefined
-          }
+          className={cn(
+            fixedLayout && tableMinWidth && "table-fixed",
+            frozenColumns && "border-separate border-spacing-0"
+          )}
           containerClassName="overflow-visible"
+          style={
+            fixedLayout && tableMinWidth
+              ? { minWidth: tableMinWidth }
+              : undefined
+          }
         >
+          {fixedLayout && tableMinWidth ? (
+            <colgroup>
+              {table.getVisibleLeafColumns().map((column) => (
+                <col
+                  key={column.id}
+                  style={
+                    column.columnDef.size === undefined
+                      ? undefined
+                      : { width: column.columnDef.size }
+                  }
+                />
+              ))}
+            </colgroup>
+          ) : null}
           <TableHeader className="sticky top-0 z-30 before:z-21">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     className={cn(
-                      "sticky top-0 z-30",
-                      size === "sm" && "h-[40px]",
-                      size === "md" && "h-[44px]",
-                      size === "lg" && "h-[48px]",
+                      "sticky top-0 z-30 has-data-interactive:pl-0",
+                      getDataTableHeadHeightClass(size),
                       getPinnedColumnClass(header.column, true)
                     )}
                     colSpan={header.colSpan}
                     key={header.id}
-                    style={getPinnedColumnStyle(header.column)}
+                    style={getColumnStyle(header.column, fixedLayout)}
                   >
                     {header.isPlaceholder
                       ? null
@@ -1159,12 +1262,10 @@ function DataTableImpl<TData, TValue>({
                       className={cn(
                         frozenColumns && "border-b",
                         getPinnedColumnClass(cell.column),
-                        size === "sm" && "py-2",
-                        size === "md" && "py-3",
-                        size === "lg" && "py-4"
+                        getDataTableCellPaddingClass(size)
                       )}
                       key={cell.id}
-                      style={getPinnedColumnStyle(cell.column)}
+                      style={getColumnStyle(cell.column, fixedLayout)}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
