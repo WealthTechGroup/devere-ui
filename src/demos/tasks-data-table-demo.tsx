@@ -108,6 +108,7 @@ function TasksDataTableDemo() {
     <DataTable
       columns={columns}
       data={data}
+      data-disable-dashboard-scroll
       filters={filters}
       frozenColumns={["id"]}
       isLoading={isLoading}

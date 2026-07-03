@@ -812,7 +812,7 @@ function getPinnedColumnClass<TData, TValue>(
   return cn(
     "relative",
     isHeader
-      ? "z-40"
+      ? "z-30"
       : "z-20 bg-background transition-colors group-hover:bg-muted group-data-[state=selected]:bg-muted dark:group-hover:bg-card",
     column.getIsLastColumn("left") &&
       "after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border after:content-['']"
@@ -1084,12 +1084,22 @@ function DataTableImpl<TData, TValue>({
         {isLoading && (
           <LinearProgress
             aria-label="Loading rows"
-            className="absolute inset-x-0 top-10.25 z-30"
+            className={cn(
+              "absolute inset-x-0 z-31",
+              size === "sm" && "top-[41px]",
+              size === "md" && "top-[45px]",
+              size === "lg" && "top-[49px]"
+            )}
           />
         )}
         {!table.getRowModel().rows?.length && (
           <div
-            className="absolute top-10.25 right-0 bottom-0 left-0 flex flex-1 flex-col items-center justify-center bg-muted"
+            className={cn(
+              "absolute right-0 bottom-0 left-0 flex flex-1 flex-col items-center justify-center bg-muted",
+              size === "sm" && "top-[41px]",
+              size === "md" && "top-[45px]",
+              size === "lg" && "top-[49px]"
+            )}
             role="status"
           >
             <p className="text-center text-muted-foreground text-sm">
@@ -1103,16 +1113,16 @@ function DataTableImpl<TData, TValue>({
           }
           containerClassName="overflow-visible"
         >
-          <TableHeader className="sticky top-0 before:z-21">
+          <TableHeader className="sticky top-0 z-30 before:z-21">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     className={cn(
                       "sticky top-0 z-30",
-                      size === "sm" && "h-10",
-                      size === "md" && "h-11",
-                      size === "lg" && "h-12",
+                      size === "sm" && "h-[40px]",
+                      size === "md" && "h-[44px]",
+                      size === "lg" && "h-[48px]",
                       getPinnedColumnClass(header.column, true)
                     )}
                     colSpan={header.colSpan}

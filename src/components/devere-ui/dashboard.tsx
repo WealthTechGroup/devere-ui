@@ -36,7 +36,7 @@ type NavBadge = { count: number; className?: string };
 
 type NavItem = {
   title: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   to: string;
   badge?: NavBadge;
 };
@@ -152,7 +152,7 @@ export function AppSidebar({
                     )}
                     tooltip={item.title}
                   >
-                    {item.icon}
+                    {item.icon ?? null}
                     <span className="truncate">{item.title}</span>
                     {item?.badge?.count ? (
                       <SidebarMenuBadge className={item.badge.className}>

@@ -4,7 +4,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-export const tailwindBadgeColors = [
+export const badgeColors = [
+  // Tailwind colors: https://tailwindcss.com/docs/colors
   "red",
   "orange",
   "amber",
@@ -23,11 +24,19 @@ export const tailwindBadgeColors = [
   "pink",
   "rose",
   "slate",
+  "gray",
+  "zinc",
+  "neutral",
+  "stone",
+  "taupe",
+  "mauve",
+  "mist",
+  "olive",
 ] as const;
 
-export type TailwindBadgeColor = (typeof tailwindBadgeColors)[number];
+export type BadgeColor = (typeof badgeColors)[number];
 
-const tailwindColorVariants = {
+const badgeColorVariants = {
   red: "bg-red-600/10 text-red-600 ring-red-500/20 [a]:hover:bg-red-600/20 dark:bg-red-400/20 dark:text-red-400 dark:ring-red-400/20 dark:[a]:hover:bg-red-400/30",
   orange:
     "bg-orange-600/10 text-orange-600 ring-orange-500/20 [a]:hover:bg-orange-600/20 dark:bg-orange-400/20 dark:text-orange-400 dark:ring-orange-400/20 dark:[a]:hover:bg-orange-400/30",
@@ -56,7 +65,20 @@ const tailwindColorVariants = {
   rose: "bg-rose-600/10 text-rose-600 ring-rose-500/20 [a]:hover:bg-rose-600/20 dark:bg-rose-400/20 dark:text-rose-400 dark:ring-rose-400/20 dark:[a]:hover:bg-rose-400/30",
   slate:
     "bg-slate-600/10 text-slate-600 ring-slate-500/20 [a]:hover:bg-slate-600/20 dark:bg-slate-400/20 dark:text-slate-400 dark:ring-slate-400/20 dark:[a]:hover:bg-slate-400/30",
-} satisfies Record<TailwindBadgeColor, string>;
+  gray: "bg-gray-600/10 text-gray-600 ring-gray-500/20 [a]:hover:bg-gray-600/20 dark:bg-gray-400/20 dark:text-gray-400 dark:ring-gray-400/20 dark:[a]:hover:bg-gray-400/30",
+  zinc: "bg-zinc-600/10 text-zinc-600 ring-zinc-500/20 [a]:hover:bg-zinc-600/20 dark:bg-zinc-400/20 dark:text-zinc-400 dark:ring-zinc-400/20 dark:[a]:hover:bg-zinc-400/30",
+  neutral:
+    "bg-neutral-600/10 text-neutral-600 ring-neutral-500/20 [a]:hover:bg-neutral-600/20 dark:bg-neutral-400/20 dark:text-neutral-400 dark:ring-neutral-400/20 dark:[a]:hover:bg-neutral-400/30",
+  stone:
+    "bg-stone-600/10 text-stone-600 ring-stone-500/20 [a]:hover:bg-stone-600/20 dark:bg-stone-400/20 dark:text-stone-400 dark:ring-stone-400/20 dark:[a]:hover:bg-stone-400/30",
+  taupe:
+    "bg-taupe-600/10 text-taupe-600 ring-taupe-500/20 [a]:hover:bg-taupe-600/20 dark:bg-taupe-400/20 dark:text-taupe-400 dark:ring-taupe-400/20 dark:[a]:hover:bg-taupe-400/30",
+  mauve:
+    "bg-mauve-600/10 text-mauve-600 ring-mauve-500/20 [a]:hover:bg-mauve-600/20 dark:bg-mauve-400/20 dark:text-mauve-400 dark:ring-mauve-400/20 dark:[a]:hover:bg-mauve-400/30",
+  mist: "bg-mist-600/10 text-mist-600 ring-mist-500/20 [a]:hover:bg-mist-600/20 dark:bg-mist-400/20 dark:text-mist-400 dark:ring-mist-400/20 dark:[a]:hover:bg-mist-400/30",
+  olive:
+    "bg-olive-600/10 text-olive-600 ring-olive-500/20 [a]:hover:bg-olive-600/20 dark:bg-olive-400/20 dark:text-olive-400 dark:ring-olive-400/20 dark:[a]:hover:bg-olive-400/30",
+} satisfies Record<BadgeColor, string>;
 
 const badgeVariants = cva(
   "group/badge inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border border-transparent font-medium transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none",
@@ -76,7 +98,7 @@ const badgeVariants = cva(
 
 type BadgeProps = useRender.ComponentProps<"span"> &
   VariantProps<typeof badgeVariants> & {
-    color?: TailwindBadgeColor;
+    color?: BadgeColor;
   };
 
 function Badge({
@@ -93,7 +115,7 @@ function Badge({
         className: cn(
           badgeVariants({ size }),
           color && "ring-1 ring-inset",
-          color && tailwindColorVariants[color],
+          color && badgeColorVariants[color],
           className
         ),
       },
