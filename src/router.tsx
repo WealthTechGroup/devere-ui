@@ -38,15 +38,7 @@ const rootRoute = createRootRoute({
       homePath="/"
       items={sidebarItems}
       logo={logo}
-      signOut={() => {
-        //
-      }}
       title="deVere UI"
-      user={{
-        initials: "DU",
-        name: "deVere UI",
-        email: "registry@devere-ui.dev",
-      }}
     >
       <Outlet />
     </Dashboard>

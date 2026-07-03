@@ -81,12 +81,12 @@ const navMenuButtonClassName =
 
 type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   items: { label?: string; items: NavItem[] }[];
-  user: {
+  user?: {
     initials: string;
     name: string;
     email: string;
   };
-  signOut: () => void;
+  signOut?: () => void;
   logo: string;
   title: string;
   homePath?: string;
@@ -166,9 +166,11 @@ export function AppSidebar({
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="border-t">
-        <NavUser signOut={signOut} user={user} />
-      </SidebarFooter>
+      {user && (
+        <SidebarFooter className="border-t">
+          <NavUser signOut={signOut} user={user} />
+        </SidebarFooter>
+      )}
       <SidebarRail />
     </Sidebar>
   );
@@ -180,7 +182,7 @@ type NavUserProps = {
     name: string;
     email: string;
   };
-  signOut: () => void;
+  signOut?: () => void;
 };
 
 export function NavUser({ user, signOut }: NavUserProps) {
@@ -234,11 +236,16 @@ export function NavUser({ user, signOut }: NavUserProps) {
                 title="Theme"
               />
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
-              <LogOutIcon />
-              Log out
-            </DropdownMenuItem>
+
+            {signOut && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
+                  <LogOutIcon />
+                  Log out
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
