@@ -69,9 +69,12 @@ const componentRoutes = registryItems.map((item) =>
 
 const routeTree = rootRoute.addChildren([indexRoute, ...componentRoutes]);
 
+const basepath = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
+
 const router = createRouter({
   routeTree,
   scrollRestoration: true,
+  basepath,
 });
 
 declare module "@tanstack/react-router" {
