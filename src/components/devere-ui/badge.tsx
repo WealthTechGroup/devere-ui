@@ -89,7 +89,14 @@ const badgeVariants = cva(
         md: "h-6 px-2.5 py-0.5 text-[0.8125rem] [&>svg]:size-3.5!",
         lg: "h-7 px-3 py-1 text-[0.875rem] [&>svg]:size-4!",
       },
+      color: badgeColorVariants,
     },
+    compoundVariants: [
+      {
+        color: [...badgeColors],
+        class: "ring-1 ring-inset",
+      },
+    ],
     defaultVariants: {
       size: "md",
     },
@@ -97,9 +104,7 @@ const badgeVariants = cva(
 );
 
 type BadgeProps = useRender.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants> & {
-    color?: BadgeColor;
-  };
+  VariantProps<typeof badgeVariants>;
 
 function Badge({
   className,
@@ -112,12 +117,7 @@ function Badge({
     defaultTagName: "span",
     props: mergeProps<"span">(
       {
-        className: cn(
-          badgeVariants({ size }),
-          color && "ring-1 ring-inset",
-          color && badgeColorVariants[color],
-          className
-        ),
+        className: cn(badgeVariants({ size, color }), className),
       },
       props
     ),
