@@ -27,6 +27,7 @@ import {
   ChevronsUpDown,
   DownloadIcon,
   EyeOff,
+  Plus,
   PlusCircle,
   Settings2,
   X,
@@ -514,7 +515,10 @@ export function DataTableColumnHeader<TData, TValue>({
 }
 
 interface DataTableFacetedFilterProps<TData, TValue> {
+  allowCustom?: boolean;
   column?: Column<TData, TValue>;
+  customPlaceholder?: string;
+  description?: string;
   options: {
     label: string;
     value: string;
@@ -524,15 +528,397 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   title?: string;
 }
 
+function getFilterOptionLabel(
+  value: string,
+  options: DataTableFacetedFilterProps<unknown, unknown>["options"]
+): string {
+  return options.find((option) => option.value === value)?.label ?? value;
+}
+
+type FacetedFilterOption = DataTableFacetedFilterProps<
+  unknown,
+  unknown
+>["options"][number];
+
+function useFacetedFilterLogic<TData, TValue>({
+  allowCustom,
+  column,
+  options,
+}: Pick<
+  DataTableFacetedFilterProps<TData, TValue>,
+  "allowCustom" | "column" | "options"
+>) {
+  const facets = column?.getFacetedUniqueValues();
+  const filterValue = column?.getFilterValue() as string[] | undefined;
+  const selectedValues = new Set(filterValue ?? []);
+  const [customInput, setCustomInput] = useState("");
+
+  const optionValues = new Set(options.map((option) => option.value));
+  const customOptions: FacetedFilterOption[] = Array.from(selectedValues)
+    .filter((value) => !optionValues.has(value))
+    .map((value) => ({ label: value, value }));
+  const displayOptions = [...options, ...customOptions];
+
+  const setSelectedValues = (values: Set<string>) => {
+    const filterValues = Array.from(values);
+    column?.setFilterValue(filterValues.length ? filterValues : undefined);
+  };
+
+  const toggleValue = (value: string) => {
+    const next = new Set(selectedValues);
+    if (next.has(value)) {
+      next.delete(value);
+    } else {
+      next.add(value);
+    }
+    setSelectedValues(next);
+  };
+
+  const selectCustomValue = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || selectedValues.has(trimmed)) {
+      return;
+    }
+    const next = new Set(selectedValues);
+    next.add(trimmed);
+    setSelectedValues(next);
+    setCustomInput("");
+  };
+
+  const clearFilters = () => column?.setFilterValue(undefined);
+
+  const trimmedInput = customInput.trim();
+  const pendingCustomValue = Boolean(
+    allowCustom &&
+      trimmedInput.length > 0 &&
+      !selectedValues.has(trimmedInput) &&
+      !options.some((option) => option.value === trimmedInput)
+  );
+  const showTypeToAddEmpty = Boolean(
+    allowCustom &&
+      !trimmedInput &&
+      displayOptions.length === 0 &&
+      !pendingCustomValue
+  );
+  const hasFilterItems = pendingCustomValue || displayOptions.length > 0;
+  const showListSection = hasFilterItems || showTypeToAddEmpty;
+
+  return {
+    clearFilters,
+    customInput,
+    displayOptions,
+    facets,
+    hasFilterItems,
+    pendingCustomValue,
+    selectCustomValue,
+    selectedValues,
+    setCustomInput,
+    showListSection,
+    showTypeToAddEmpty,
+    toggleValue,
+    trimmedInput,
+  };
+}
+
+function FacetedFilterSelectedBadges({
+  options,
+  selectedValues,
+}: {
+  options: FacetedFilterOption[];
+  selectedValues: Set<string>;
+}) {
+  if (selectedValues.size === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <Separator className="mx-2 h-full" orientation="vertical" />
+      <Badge
+        className="rounded-sm px-1 font-normal lg:hidden"
+        variant="secondary"
+      >
+        {selectedValues.size}
+      </Badge>
+      <div className="hidden gap-1 lg:flex">
+        {selectedValues.size > 2 ? (
+          <Badge className="rounded-full px-1 font-normal" variant="secondary">
+            {selectedValues.size} selected
+          </Badge>
+        ) : (
+          Array.from(selectedValues).map((value) => (
+            <Badge
+              className="rounded-full px-1 font-normal"
+              key={value}
+              variant="secondary"
+            >
+              {getFilterOptionLabel(value, options)}
+            </Badge>
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
+function FacetedFilterCheckboxOption({
+  facetCount,
+  isSelected,
+  onSelect,
+  option,
+  showCount,
+}: {
+  facetCount?: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  option: FacetedFilterOption;
+  showCount: boolean;
+}) {
+  return (
+    <CommandItem
+      className={cn("[&>.lucide-check]:last:hidden")}
+      onSelect={onSelect}
+    >
+      <div
+        className={cn(
+          "flex size-4 shrink-0 items-center justify-center rounded-[4px] border",
+          isSelected
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-input [&_svg]:invisible"
+        )}
+      >
+        <Check className="size-3.5 text-primary-foreground" />
+      </div>
+      {option.icon ? (
+        <option.icon className="size-4 shrink-0 text-muted-foreground" />
+      ) : null}
+      <span className="truncate">{option.label}</span>
+      {showCount && facetCount ? (
+        <span className="ml-auto flex size-4 shrink-0 items-center justify-center font-mono text-muted-foreground text-xs">
+          {facetCount}
+        </span>
+      ) : null}
+    </CommandItem>
+  );
+}
+
+function FacetedFilterAddOption({
+  onSelect,
+  value,
+}: {
+  onSelect: () => void;
+  value: string;
+}) {
+  return (
+    <CommandItem onSelect={onSelect}>
+      <div className="flex size-4 shrink-0 items-center justify-center">
+        <Plus className="size-3.5 text-muted-foreground" />
+      </div>
+      <span className="truncate">{value}</span>
+    </CommandItem>
+  );
+}
+
+function FacetedFilterOptionsList({
+  allowCustom,
+  displayOptions,
+  facetCounts,
+  hasFilterItems,
+  onSelectCustom,
+  onToggleValue,
+  pendingCustomValue,
+  selectedValues,
+  showCount,
+  showTypeToAddEmpty,
+  trimmedInput,
+}: {
+  allowCustom: boolean;
+  displayOptions: FacetedFilterOption[];
+  facetCounts?: Map<string, number>;
+  hasFilterItems: boolean;
+  onSelectCustom: (value: string) => void;
+  onToggleValue: (value: string) => void;
+  pendingCustomValue: boolean;
+  selectedValues: Set<string>;
+  showCount: boolean;
+  showTypeToAddEmpty: boolean;
+  trimmedInput: string;
+}) {
+  return (
+    <>
+      {allowCustom ? null : <CommandEmpty>No results found.</CommandEmpty>}
+      {showTypeToAddEmpty ? (
+        <CommandEmpty className="py-6 text-muted-foreground text-sm">
+          Type to add a filter
+        </CommandEmpty>
+      ) : null}
+      {hasFilterItems ? (
+        <CommandGroup>
+          {pendingCustomValue ? (
+            <FacetedFilterAddOption
+              onSelect={() => onSelectCustom(trimmedInput)}
+              value={trimmedInput}
+            />
+          ) : null}
+          {displayOptions
+            .filter((option) => !!option.value && !!option.label)
+            .map((option) => (
+              <FacetedFilterCheckboxOption
+                facetCount={facetCounts?.get(option.value)}
+                isSelected={selectedValues.has(option.value)}
+                key={option.value}
+                onSelect={() => onToggleValue(option.value)}
+                option={option}
+                showCount={showCount}
+              />
+            ))}
+        </CommandGroup>
+      ) : null}
+    </>
+  );
+}
+
+function FacetedFilterClearSection({ onClear }: { onClear: () => void }) {
+  return (
+    <CommandGroup>
+      <CommandItem className="justify-center gap-2" onSelect={onClear}>
+        <X className="size-4 shrink-0" />
+        Clear filters
+      </CommandItem>
+    </CommandGroup>
+  );
+}
+
+function FacetedFilterCustomPopoverContent({
+  clearFilters,
+  customInput,
+  customPlaceholder,
+  description,
+  filterOptionsList,
+  onCustomInputChange,
+  pendingCustomValue,
+  selectCustomValue,
+  selectedCount,
+  showListSection,
+  title,
+  trimmedInput,
+}: {
+  clearFilters: () => void;
+  customInput: string;
+  customPlaceholder?: string;
+  description?: string;
+  filterOptionsList: React.ReactNode;
+  onCustomInputChange: (value: string) => void;
+  pendingCustomValue: boolean;
+  selectCustomValue: (value: string) => void;
+  selectedCount: number;
+  showListSection: boolean;
+  title?: string;
+  trimmedInput: string;
+}) {
+  return (
+    <>
+      <Command
+        className="rounded-none bg-transparent p-0 **:data-[slot=command-input-wrapper]:p-0"
+        shouldFilter={false}
+      >
+        <div className="p-2">
+          <CommandInput
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && pendingCustomValue) {
+                event.preventDefault();
+                selectCustomValue(trimmedInput);
+              }
+            }}
+            onValueChange={onCustomInputChange}
+            placeholder={
+              customPlaceholder ??
+              `Search ${title?.toLowerCase() ?? "filters"}…`
+            }
+            value={customInput}
+          />
+        </div>
+        {showListSection ? <Separator /> : null}
+        <CommandList className="max-h-72 overflow-y-auto p-0">
+          {filterOptionsList}
+        </CommandList>
+        {selectedCount > 0 ? (
+          <>
+            <Separator />
+            <FacetedFilterClearSection onClear={clearFilters} />
+          </>
+        ) : null}
+      </Command>
+      {description ? (
+        <>
+          <Separator />
+          <p className="px-2 py-2 text-muted-foreground text-xs">
+            {description}
+          </p>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+function FacetedFilterDefaultPopoverContent({
+  optionList,
+  title,
+}: {
+  optionList: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <Command className="rounded-none bg-transparent p-0 **:data-[slot=command-input-wrapper]:p-0">
+      <div className="p-2">
+        <CommandInput placeholder={title} />
+      </div>
+      <Separator />
+      <CommandList className="max-h-72 overflow-y-auto p-0">
+        {optionList}
+      </CommandList>
+    </Command>
+  );
+}
+
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
   showCount = true,
+  allowCustom = false,
+  customPlaceholder,
+  description,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const facets = column?.getFacetedUniqueValues();
-  const filterValue = column?.getFilterValue() as string[] | undefined;
-  const selectedValues = new Set(filterValue ?? []);
+  const filter = useFacetedFilterLogic({ allowCustom, column, options });
+
+  const filterOptionsList = (
+    <FacetedFilterOptionsList
+      allowCustom={allowCustom}
+      displayOptions={filter.displayOptions}
+      facetCounts={filter.facets}
+      hasFilterItems={filter.hasFilterItems}
+      onSelectCustom={filter.selectCustomValue}
+      onToggleValue={filter.toggleValue}
+      pendingCustomValue={filter.pendingCustomValue}
+      selectedValues={filter.selectedValues}
+      showCount={showCount}
+      showTypeToAddEmpty={filter.showTypeToAddEmpty}
+      trimmedInput={filter.trimmedInput}
+    />
+  );
+
+  const optionList = (
+    <>
+      {filterOptionsList}
+      {!allowCustom && filter.selectedValues.size > 0 ? (
+        <>
+          <CommandSeparator className="my-0" />
+          <FacetedFilterClearSection onClear={filter.clearFilters} />
+        </>
+      ) : null}
+    </>
+  );
 
   return (
     <Popover>
@@ -541,108 +927,35 @@ export function DataTableFacetedFilter<TData, TValue>({
           <Button className="h-8 border-dashed" size="sm" variant="outline">
             <PlusCircle />
             {title}
-            {selectedValues?.size > 0 && (
-              <>
-                <Separator className="mx-2 h-full" orientation="vertical" />
-                <Badge
-                  className="rounded-sm px-1 font-normal lg:hidden"
-                  variant="secondary"
-                >
-                  {selectedValues.size}
-                </Badge>
-                <div className="hidden gap-1 lg:flex">
-                  {selectedValues.size > 2 ? (
-                    <Badge
-                      className="rounded-full px-1 font-normal"
-                      variant="secondary"
-                    >
-                      {selectedValues.size} selected
-                    </Badge>
-                  ) : (
-                    options
-                      .filter((option) => selectedValues.has(option.value))
-                      .map((option) => (
-                        <Badge
-                          className="rounded-full px-1 font-normal"
-                          key={option.value}
-                          variant="secondary"
-                        >
-                          {option.label}
-                        </Badge>
-                      ))
-                  )}
-                </div>
-              </>
-            )}
+            <FacetedFilterSelectedBadges
+              options={options}
+              selectedValues={filter.selectedValues}
+            />
           </Button>
         }
       />
-      <PopoverContent align="start" className="w-[200px] p-0">
-        <Command>
-          <CommandInput placeholder={title} />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup>
-              {options
-                .filter((option) => !!option.value && !!option.label)
-                .map((option) => {
-                  const isSelected = selectedValues.has(option.value);
-                  return (
-                    <CommandItem
-                      className={cn(
-                        !showCount && "[&>.lucide-check]:last:hidden"
-                      )}
-                      key={option.value}
-                      onSelect={() => {
-                        if (isSelected) {
-                          selectedValues.delete(option.value);
-                        } else {
-                          selectedValues.add(option.value);
-                        }
-                        const filterValues = Array.from(selectedValues);
-                        column?.setFilterValue(
-                          filterValues.length ? filterValues : undefined
-                        );
-                      }}
-                    >
-                      <div
-                        className={cn(
-                          "flex size-4 items-center justify-center rounded-[4px] border",
-                          isSelected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-input [&_svg]:invisible"
-                        )}
-                      >
-                        <Check className="size-3.5 text-primary-foreground" />
-                      </div>
-                      {option.icon && (
-                        <option.icon className="size-4 text-muted-foreground" />
-                      )}
-                      <span>{option.label}</span>
-                      {showCount && facets?.get(option.value) && (
-                        <span className="absolute right-2 flex size-4 items-center justify-center font-mono text-muted-foreground text-xs">
-                          {facets.get(option.value)}
-                        </span>
-                      )}
-                    </CommandItem>
-                  );
-                })}
-            </CommandGroup>
-            {selectedValues.size > 0 && (
-              <>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    className="justify-center text-center"
-                    onSelect={() => column?.setFilterValue(undefined)}
-                  >
-                    Clear filters
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            )}
-          </CommandList>
-        </Command>
+      <PopoverContent align="start" className="w-[260px] gap-0 p-0">
+        {allowCustom ? (
+          <FacetedFilterCustomPopoverContent
+            clearFilters={filter.clearFilters}
+            customInput={filter.customInput}
+            customPlaceholder={customPlaceholder}
+            description={description}
+            filterOptionsList={filterOptionsList}
+            onCustomInputChange={filter.setCustomInput}
+            pendingCustomValue={filter.pendingCustomValue}
+            selectCustomValue={filter.selectCustomValue}
+            selectedCount={filter.selectedValues.size}
+            showListSection={filter.showListSection}
+            title={title}
+            trimmedInput={filter.trimmedInput}
+          />
+        ) : (
+          <FacetedFilterDefaultPopoverContent
+            optionList={optionList}
+            title={title}
+          />
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -653,19 +966,36 @@ interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
+const pageNumberFormatter = new Intl.NumberFormat("en-GB", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+function getPaginationCounts<TData>(table: Table<TData>) {
+  const pageRows = pageNumberFormatter.format(table.getRowModel().rows.length);
+  const totalRows = pageNumberFormatter.format(
+    table.options.manualPagination
+      ? table.getRowCount()
+      : table.getFilteredRowModel().rows.length
+  );
+  const pageCount = pageNumberFormatter.format(table.getPageCount());
+  const page = pageNumberFormatter.format(
+    table.getState().pagination.pageIndex + 1
+  );
+
+  return { pageRows, totalRows, pageCount, page };
+}
+
 export function DataTablePagination<TData>({
   table,
   pageSizeOptions = [25, 50, 100, 200],
 }: DataTablePaginationProps<TData>) {
-  const pageRows = table.getRowModel().rows.length;
-  const totalRows = table.options.manualPagination
-    ? table.getRowCount()
-    : table.getFilteredRowModel().rows.length;
+  const { pageRows, totalRows, pageCount, page } = getPaginationCounts(table);
 
   return (
     <div className="flex items-center px-2">
       <div className="hidden flex-1 text-muted-foreground text-sm lg:block">
-        Showing {pageRows} of {totalRows} row{totalRows === 1 ? "" : "s"}.
+        Showing {pageRows} of {totalRows} row{totalRows === "1" ? "" : "s"}.
       </div>
       <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center space-x-2">
@@ -689,8 +1019,7 @@ export function DataTablePagination<TData>({
           </Select>
         </div>
         <div className="justify-center font-medium text-sm">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          Page {page} of {pageCount}
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -740,12 +1069,16 @@ export function DataTablePagination<TData>({
 }
 
 export interface DataTableFilterProps {
+  allowCustom?: boolean;
   column: string;
+  customPlaceholder?: string;
+  description?: string;
   options: {
     label: string;
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  showCount?: boolean;
   title: string;
 }
 
@@ -809,10 +1142,13 @@ export function DataTableToolbar<TData>({
         )}
         {filters?.map((filter) => (
           <DataTableFacetedFilter
+            allowCustom={filter.allowCustom}
             column={table.getColumn(filter.column)}
+            customPlaceholder={filter.customPlaceholder}
+            description={filter.description}
             key={filter.title}
             options={filter.options}
-            showCount={!serverSide}
+            showCount={filter.showCount ?? !serverSide}
             title={filter.title}
           />
         ))}
@@ -977,6 +1313,8 @@ interface DataTableProps<TData, TValue> {
   /** Use table-layout: fixed and honour column `size` defs for min widths. */
   fixedLayout?: boolean;
   frozenColumns?: string[];
+  /** Column ids hidden from the table UI (e.g. filter-only columns). */
+  hiddenColumns?: string[];
   /**
    * Seeds the initial sorting, filters, search and pagination. Read once on
    * mount; the table owns the state afterwards.
@@ -1149,12 +1487,18 @@ function DataTableImpl<TData, TValue>({
   frozenColumns,
   pageSizeOptions,
   fixedLayout,
+  hiddenColumns,
   size = "md",
   urlSearch,
 }: DataTableImplProps<TData, TValue>) {
   const resolvedDefaultPageSize = defaultPageSize ?? DEFAULT_PAGE_SIZE;
   const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    () =>
+      Object.fromEntries(
+        (hiddenColumns ?? []).map((columnId) => [columnId, false])
+      )
+  );
   const {
     onColumnFiltersChange,
     onGlobalFilterChange,
@@ -1234,13 +1578,17 @@ function DataTableImpl<TData, TValue>({
 
       <div className="relative min-h-0 min-w-0 max-w-full flex-1 overflow-auto rounded-3xl border">
         {isLoading && (
-          <LinearProgress
-            aria-label="Loading rows"
+          <div
             className={cn(
-              "absolute inset-x-0 z-31",
+              "pointer-events-none sticky z-31 h-0 overflow-visible",
               getStickyHeaderOffsetClass(size)
             )}
-          />
+          >
+            <LinearProgress
+              aria-label="Loading rows"
+              className="absolute inset-x-0 top-0"
+            />
+          </div>
         )}
         {!table.getRowModel().rows?.length && (
           <div
