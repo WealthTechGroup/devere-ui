@@ -5,8 +5,7 @@ import {
   DataTable,
   DataTableColumnHeader,
   type DataTableFilterProps,
-  type DataTableSearchParams,
-  dataTableSearchParamsSchema,
+  useUrlSearchParams,
 } from "@/components/devere-ui/data-table";
 import { fetchTasks, type Task } from "./data/fake-tasks-api";
 
@@ -78,9 +77,7 @@ const filters: DataTableFilterProps[] = [
 ];
 
 function TasksDataTableDemo() {
-  const [searchParams, setSearchParams] = useState<DataTableSearchParams>(
-    dataTableSearchParamsSchema.parse({})
-  );
+  const { searchParams } = useUrlSearchParams();
 
   const [data, setData] = useState<Task[]>([]);
   const [total, setTotal] = useState(0);
@@ -112,7 +109,6 @@ function TasksDataTableDemo() {
       filters={filters}
       frozenColumns={["id"]}
       isLoading={isLoading}
-      onSearchParamsChange={setSearchParams}
       pageSizeOptions={[10, 25, 50, 100]}
       rowCount={total}
       searchColumn="title"

@@ -123,8 +123,11 @@ primitives they build on.
   source of truth). Expose an `on<Thing>Change` callback to observe it and an
   `initial<Thing>` prop to seed it, rather than accepting fully controlled
   state props. See `data-table.tsx` (`onSearchParamsChange` / `initialSearch`).
-- URL sync reads the URL once on mount (for the initial state), then only
-  writes to it. The component state never re-reads from the URL afterwards.
+- With `syncWithUrl`, the URL and table stay in sync both ways. Use
+  `useUrlSearchParams()` to read or set search params from outside (back/forward,
+  programmatic navigation); the table updates when the URL changes.
+- TanStack Router URL reads must use `useLocation()` (or `useRouterState`), not
+  `router.state.location` — the latter is not reactive to navigation.
 
 ## Testing
 

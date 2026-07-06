@@ -1,4 +1,4 @@
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import type { Column, OnChangeFn, Row, Table } from "@tanstack/react-table";
 import {
   type ColumnDef,
@@ -290,6 +290,20 @@ function tableStateToSearchParams(
   );
 }
 
+function areSearchParamsEqual(
+  a: DataTableSearchParams,
+  b: DataTableSearchParams
+): boolean {
+  return (
+    a.page === b.page &&
+    a.per_page === b.per_page &&
+    a.sort === b.sort &&
+    a.sort_by === b.sort_by &&
+    a.q === b.q &&
+    JSON.stringify(a.filters ?? []) === JSON.stringify(b.filters ?? [])
+  );
+}
+
 /** Strips defaults and empty values so the URL only carries user changes. */
 function searchParamsToUrl(
   search: DataTableSearchParams,
@@ -303,31 +317,54 @@ function searchParamsToUrl(
 }
 
 /**
- * Bridges the table's search params to the URL. Reads the current params once
- * (for the table's initial state) and returns a `writeSearch` callback the
- * table calls whenever its state changes. The URL is write-only after mount;
- * the table stays the source of truth.
+ * Read and write DataTable search params via the URL. Requires TanStack Router.
+ * Use with `<DataTable syncWithUrl />` — URL changes update the table, and
+ * table interactions update the URL.
  */
-function useUrlSearchSync(defaultPageSize: number) {
-  const router = useRouter();
+export function useUrlSearchParams(
+  defaultPageSize: number = DEFAULT_PAGE_SIZE
+): {
+  searchParams: DataTableSearchParams;
+  setSearchParams: (
+    search:
+      | DataTableSearchParams
+      | ((previous: DataTableSearchParams) => DataTableSearchParams)
+  ) => void;
+} {
+  const { location, searchParams } =
+    useDataTableLocationSearch(defaultPageSize);
   const navigate = useNavigate();
 
-  const [initialSearch] = useState(() =>
-    parseSearchParams(router.state.location.search, defaultPageSize)
-  );
+  const setSearchParams = useCallback(
+    (
+      search:
+        | DataTableSearchParams
+        | ((previous: DataTableSearchParams) => DataTableSearchParams)
+    ) => {
+      const next = typeof search === "function" ? search(searchParams) : search;
+      const normalized = parseSearchParams(next, defaultPageSize);
 
-  const writeSearch = useCallback(
-    (search: DataTableSearchParams) => {
       navigate({
         replace: true,
-        search: searchParamsToUrl(search, defaultPageSize) as never,
-        to: router.state.location.pathname,
+        search: searchParamsToUrl(normalized, defaultPageSize) as never,
+        to: location.pathname,
       });
     },
-    [navigate, router, defaultPageSize]
+    [defaultPageSize, location.pathname, navigate, searchParams]
   );
 
-  return { initialSearch, writeSearch };
+  return { searchParams, setSearchParams };
+}
+
+function useDataTableLocationSearch(defaultPageSize: number) {
+  const location = useLocation();
+
+  const searchParams = useMemo(
+    () => parseSearchParams(location.search, defaultPageSize),
+    [defaultPageSize, location.search]
+  );
+
+  return { location, searchParams };
 }
 
 const CSV_NEEDS_QUOTE = /[",\n\r]/;
@@ -967,24 +1004,46 @@ interface DataTableProps<TData, TValue> {
   size?: "sm" | "md" | "lg";
   /**
    * Persist pagination, sorting, filters and search in the URL. Requires a
-   * TanStack Router context. The value is read once and must not change at
-   * runtime. The URL is read once on mount, then only written to.
+   * TanStack Router context. URL changes (back/forward or `useUrlSearchParams`)
+   * update the table; table interactions update the URL.
    */
   syncWithUrl?: boolean;
 }
 
+type DataTableImplProps<TData, TValue> = DataTableProps<TData, TValue> & {
+  urlSearch?: DataTableSearchParams;
+};
+
 function useTableSearchState({
   defaultPageSize,
   initialSearch,
+  urlSearch,
   onSearchParamsChange,
 }: {
   defaultPageSize: number;
   initialSearch?: DataTableSearch;
+  urlSearch?: DataTableSearchParams;
   onSearchParamsChange?: (search: DataTableSearchParams) => void;
 }) {
   const [state, setState] = useState(() =>
-    searchToTableState(parseSearchParams(initialSearch, defaultPageSize))
+    searchToTableState(
+      parseSearchParams(urlSearch ?? initialSearch, defaultPageSize)
+    )
   );
+
+  useEffect(() => {
+    if (urlSearch === undefined) {
+      return;
+    }
+
+    setState((previous) => {
+      const current = tableStateToSearchParams(previous, defaultPageSize);
+      if (areSearchParamsEqual(current, urlSearch)) {
+        return previous;
+      }
+      return searchToTableState(parseSearchParams(urlSearch, defaultPageSize));
+    });
+  }, [defaultPageSize, urlSearch]);
 
   const searchParams = useMemo(
     () => tableStateToSearchParams(state, defaultPageSize),
@@ -1088,9 +1147,9 @@ function DataTableImpl<TData, TValue>({
   pageSizeOptions,
   fixedLayout,
   size = "md",
-}: DataTableProps<TData, TValue>) {
-  const resolvedDefaultPageSize =
-    defaultPageSize ?? pageSizeOptions?.[0] ?? DEFAULT_PAGE_SIZE;
+  urlSearch,
+}: DataTableImplProps<TData, TValue>) {
+  const resolvedDefaultPageSize = defaultPageSize ?? DEFAULT_PAGE_SIZE;
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const {
@@ -1102,8 +1161,9 @@ function DataTableImpl<TData, TValue>({
     state,
   } = useTableSearchState({
     defaultPageSize: resolvedDefaultPageSize,
-    initialSearch,
+    initialSearch: urlSearch ? undefined : initialSearch,
     onSearchParamsChange,
+    urlSearch,
   });
 
   const isServerSide = serverSide ?? false;
@@ -1292,23 +1352,37 @@ function UrlSyncedDataTable<TData, TValue>(
   props: DataTableProps<TData, TValue>
 ) {
   const { onSearchParamsChange } = props;
-  const defaultPageSize =
-    props.defaultPageSize ?? props.pageSizeOptions?.[0] ?? DEFAULT_PAGE_SIZE;
-  const { initialSearch, writeSearch } = useUrlSearchSync(defaultPageSize);
+  const defaultPageSize = props.defaultPageSize ?? DEFAULT_PAGE_SIZE;
+  const { location, searchParams: urlSearch } =
+    useDataTableLocationSearch(defaultPageSize);
+  const navigate = useNavigate();
+
+  const writeSearch = useCallback(
+    (search: DataTableSearchParams) => {
+      navigate({
+        replace: true,
+        search: searchParamsToUrl(search, defaultPageSize) as never,
+        to: location.pathname,
+      });
+    },
+    [defaultPageSize, location.pathname, navigate]
+  );
 
   const handleSearchParamsChange = useCallback(
     (search: DataTableSearchParams) => {
-      writeSearch(search);
+      if (!areSearchParamsEqual(search, urlSearch)) {
+        writeSearch(search);
+      }
       onSearchParamsChange?.(search);
     },
-    [writeSearch, onSearchParamsChange]
+    [onSearchParamsChange, urlSearch, writeSearch]
   );
 
   return (
     <DataTableImpl
       {...props}
-      initialSearch={initialSearch}
       onSearchParamsChange={handleSearchParamsChange}
+      urlSearch={urlSearch}
     />
   );
 }
@@ -1319,8 +1393,8 @@ function UrlSyncedDataTable<TData, TValue>(
  *
  * The table owns its state. Observe it via `onSearchParamsChange` (also fired
  * once on mount) and seed it with `initialSearch`. Pass `syncWithUrl` to
- * persist state in the URL (requires a TanStack Router context): the URL is
- * read once on mount, then only written to.
+ * persist state in the URL (requires TanStack Router). Use `useUrlSearchParams`
+ * to read or set search params from outside — URL changes update the table.
  */
 export function DataTable<TData, TValue>({
   syncWithUrl,
