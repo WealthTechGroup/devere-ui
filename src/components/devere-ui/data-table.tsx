@@ -589,6 +589,9 @@ export function DataTableFacetedFilter<TData, TValue>({
                   const isSelected = selectedValues.has(option.value);
                   return (
                     <CommandItem
+                      className={cn(
+                        !showCount && "[&>.lucide-check]:last:hidden"
+                      )}
                       key={option.value}
                       onSelect={() => {
                         if (isSelected) {
