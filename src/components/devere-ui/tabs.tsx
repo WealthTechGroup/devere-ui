@@ -28,6 +28,7 @@ const tabsListVariants = cva(
       variant: {
         default: "bg-muted",
         line: "gap-1 bg-transparent",
+        outlined: "bg-transparent ring-1 ring-border",
       },
     },
     defaultVariants: {
@@ -55,6 +56,8 @@ function TabsList({
           "absolute left-0 z-0 transition-[translate,width,height] duration-200 ease-out",
           variant === "default" &&
             "h-(--active-tab-height) w-(--active-tab-width) rounded-full bg-background group-data-horizontal/tabs:top-1/2 group-data-vertical/tabs:top-0 group-data-horizontal/tabs:translate-x-(--active-tab-left) group-data-vertical/tabs:translate-x-(--active-tab-left) group-data-horizontal/tabs:-translate-y-1/2 group-data-vertical/tabs:translate-y-(--active-tab-top) dark:bg-input/30",
+          variant === "outlined" &&
+            "h-(--active-tab-height) w-(--active-tab-width) rounded-full bg-muted group-data-horizontal/tabs:top-1/2 group-data-vertical/tabs:top-0 group-data-horizontal/tabs:translate-x-(--active-tab-left) group-data-vertical/tabs:translate-x-(--active-tab-left) group-data-horizontal/tabs:-translate-y-1/2 group-data-vertical/tabs:translate-y-(--active-tab-top)",
           variant === "line" &&
             "top-0 h-0.5 w-(--active-tab-width) translate-x-(--active-tab-left) translate-y-[calc(var(--active-tab-top)+var(--active-tab-height)+2px)] bg-foreground group-data-vertical/tabs:h-(--active-tab-height) group-data-vertical/tabs:w-0.5 group-data-vertical/tabs:translate-x-[calc(var(--active-tab-left)+var(--active-tab-width)+1px)] group-data-vertical/tabs:translate-y-(--active-tab-top)"
         )}

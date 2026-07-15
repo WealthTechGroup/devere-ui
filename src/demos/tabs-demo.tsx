@@ -32,7 +32,7 @@ function TabsExample({
 }: {
   label: string;
   orientation?: "horizontal" | "vertical";
-  variant?: "default" | "line";
+  variant?: "default" | "line" | "outlined";
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -64,11 +64,17 @@ function TabsDemo() {
     <div className="grid w-full gap-6 sm:grid-cols-2">
       <TabsExample label="Horizontal · Default" />
       <TabsExample label="Horizontal · Line" variant="line" />
+      <TabsExample label="Horizontal · Outlined" variant="outlined" />
       <TabsExample label="Vertical · Default" orientation="vertical" />
       <TabsExample
         label="Vertical · Line"
         orientation="vertical"
         variant="line"
+      />
+      <TabsExample
+        label="Vertical · Outlined"
+        orientation="vertical"
+        variant="outlined"
       />
     </div>
   );
