@@ -12,6 +12,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   type PaginationState,
+  type RowSelectionState,
   type SortingState,
   useReactTable,
   type VisibilityState,
@@ -33,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import type React from "react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { LinearProgress } from "@/components/devere-ui/linear-progress";
@@ -47,6 +49,7 @@ import {
 } from "@/components/devere-ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
   CommandEmpty,
@@ -188,20 +191,20 @@ function parseJson(value: unknown): unknown {
   try {
     return JSON.parse(value);
   } catch {
-    return;
+    // pass
   }
 }
 
 export const dataTableSearchSchema = z.object({
-  page: z.coerce.number().int().min(1).optional().catch(undefined),
-  per_page: z.coerce.number().int().min(1).optional().catch(undefined),
-  sort: z.enum(["asc", "desc"]).optional().catch(undefined),
-  sort_by: z.string().optional().catch(undefined),
-  q: z.string().optional().catch(undefined),
   filters: z.preprocess(
     parseJson,
     z.array(filterEntrySchema).optional().catch(undefined)
   ),
+  page: z.coerce.number().int().min(1).optional().catch(undefined),
+  per_page: z.coerce.number().int().min(1).optional().catch(undefined),
+  q: z.string().optional().catch(undefined),
+  sort: z.enum(["asc", "desc"]).optional().catch(undefined),
+  sort_by: z.string().optional().catch(undefined),
 });
 
 /** URL-shaped search params. Everything is optional (defaults are omitted). */
@@ -252,7 +255,7 @@ function searchToTableState(search: DataTableSearchParams): DataTableState {
     },
     sorting:
       search.sort_by && search.sort
-        ? [{ id: search.sort_by, desc: search.sort === "desc" }]
+        ? [{ desc: search.sort === "desc", id: search.sort_by }]
         : [],
   };
 }
@@ -270,7 +273,7 @@ function tableStateToSearchParams(
       ),
     }));
 
-  const activeSort = state.sorting[0];
+  const [activeSort] = state.sorting;
   const globalFilter = state.globalFilter.trim();
 
   let sort: DataTableSearchParams["sort"];
@@ -280,12 +283,12 @@ function tableStateToSearchParams(
 
   return parseSearchParams(
     {
+      filters: filters.length > 0 ? filters : undefined,
       page: state.pagination.pageIndex + 1,
       per_page: state.pagination.pageSize || defaultPageSize,
+      q: globalFilter || undefined,
       sort,
       sort_by: activeSort?.id,
-      q: globalFilter || undefined,
-      filters: filters.length > 0 ? filters : undefined,
     },
     defaultPageSize
   );
@@ -378,7 +381,7 @@ function escapeCsvCell(value: string): string {
 }
 
 function unknownToCsvString(value: unknown): string {
-  if (value == null) {
+  if (value === null) {
     return "";
   }
   if (typeof value === "object") {
@@ -398,8 +401,8 @@ export function exportData<TData>(table: Table<TData>, format: "csv"): void {
     }
     const def = col.columnDef;
     return (
-      ("accessorFn" in def && def.accessorFn != null) ||
-      ("accessorKey" in def && def.accessorKey != null)
+      ("accessorFn" in def && def.accessorFn !== null) ||
+      ("accessorKey" in def && def.accessorKey !== null)
     );
   });
 
@@ -437,7 +440,7 @@ function getColumnLabel<TData>(column: Column<TData, unknown>): string {
   if (typeof metaLabel === "string") {
     return metaLabel;
   }
-  const header = column.columnDef.header;
+  const { header } = column.columnDef;
   if (typeof header === "string") {
     return header;
   }
@@ -482,8 +485,8 @@ export function DataTableColumnHeader<TData, TValue>({
               <span className="truncate">{title}</span>
               {
                 {
-                  desc: <ArrowDown />,
                   asc: <ArrowUp />,
+                  desc: <ArrowDown />,
                   none: <ChevronsUpDown />,
                 }[column.getIsSorted() || "none"]
               }
@@ -544,11 +547,14 @@ function useFacetedFilterLogic<TData, TValue>({
   allowCustom,
   column,
   options,
+  showCount = true,
 }: Pick<
   DataTableFacetedFilterProps<TData, TValue>,
-  "allowCustom" | "column" | "options"
+  "allowCustom" | "column" | "options" | "showCount"
 >) {
-  const facets = column?.getFacetedUniqueValues();
+  // Skip faceting when unused — filter-only columns without accessors crash
+  // TanStack's getFacetedUniqueValues (values.length on undefined).
+  const facets = showCount ? column?.getFacetedUniqueValues() : undefined;
   const filterValue = column?.getFilterValue() as string[] | undefined;
   const selectedValues = new Set(filterValue ?? []);
   const [customInput, setCustomInput] = useState("");
@@ -890,7 +896,12 @@ export function DataTableFacetedFilter<TData, TValue>({
   customPlaceholder,
   description,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const filter = useFacetedFilterLogic({ allowCustom, column, options });
+  const filter = useFacetedFilterLogic({
+    allowCustom,
+    column,
+    options,
+    showCount,
+  });
 
   const filterOptionsList = (
     <FacetedFilterOptionsList
@@ -967,8 +978,8 @@ interface DataTablePaginationProps<TData> {
 }
 
 const pageNumberFormatter = new Intl.NumberFormat("en-GB", {
-  minimumFractionDigits: 0,
   maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
 });
 
 function getPaginationCounts<TData>(table: Table<TData>) {
@@ -983,19 +994,23 @@ function getPaginationCounts<TData>(table: Table<TData>) {
     table.getState().pagination.pageIndex + 1
   );
 
-  return { pageRows, totalRows, pageCount, page };
+  return { page, pageCount, pageRows, totalRows };
 }
 
 export function DataTablePagination<TData>({
   table,
   pageSizeOptions = [25, 50, 100, 200],
-}: DataTablePaginationProps<TData>) {
+  selectionLabel = true,
+}: DataTablePaginationProps<TData> & { selectionLabel?: boolean }) {
   const { pageRows, totalRows, pageCount, page } = getPaginationCounts(table);
+  const selectedCount = table.getSelectedRowModel().rows.length;
 
   return (
     <div className="flex items-center px-2">
       <div className="hidden flex-1 text-muted-foreground text-sm lg:block">
-        Showing {pageRows} of {totalRows} row{totalRows === "1" ? "" : "s"}.
+        {selectionLabel && selectedCount > 0
+          ? `${selectedCount} selected`
+          : `Showing ${pageRows} of ${totalRows} row${totalRows === "1" ? "" : "s"}.`}
       </div>
       <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center space-x-2">
@@ -1090,6 +1105,7 @@ interface DataTableToolbarProps<TData> {
   searchVisibleColumns?: boolean;
   serverSide?: boolean;
   table: Table<TData>;
+  toolbarActions?: ReactNode;
 }
 
 export function DataTableToolbar<TData>({
@@ -1100,6 +1116,7 @@ export function DataTableToolbar<TData>({
   searchColumn,
   searchVisibleColumns,
   serverSide,
+  toolbarActions,
 }: DataTableToolbarProps<TData>) {
   const isFiltered =
     table.getState().columnFilters.length > 0 ||
@@ -1119,7 +1136,7 @@ export function DataTableToolbar<TData>({
   return (
     <div className="flex flex-col justify-between gap-2 lg:flex-row">
       <div className="flex flex-1 flex-wrap items-center gap-2">
-        {hasSearch && (
+        {hasSearch ? (
           <Input
             aria-label="Filter rows"
             className="h-8 w-[150px] lg:w-[250px]"
@@ -1139,7 +1156,7 @@ export function DataTableToolbar<TData>({
             placeholder={"Filter"}
             value={searchValue}
           />
-        )}
+        ) : null}
         {filters?.map((filter) => (
           <DataTableFacetedFilter
             allowCustom={filter.allowCustom}
@@ -1152,7 +1169,7 @@ export function DataTableToolbar<TData>({
             title={filter.title}
           />
         ))}
-        {isFiltered && (
+        {isFiltered ? (
           <Button
             onClick={() => {
               if (onResetFilters) {
@@ -1169,7 +1186,8 @@ export function DataTableToolbar<TData>({
             Reset
             <X />
           </Button>
-        )}
+        ) : null}
+        {toolbarActions}
       </div>
       <div className="flex items-end gap-2 lg:ml-auto">
         {exportable ? <DataTableExportButton table={table} /> : null}
@@ -1246,7 +1264,7 @@ function getColumnStyle<TData, TValue>(
   fixedLayout?: boolean
 ): React.CSSProperties {
   const pinned = column.getIsPinned();
-  const size = column.columnDef.size;
+  const { size } = column.columnDef;
   const hasFixedSize = size !== undefined;
 
   if (!fixedLayout) {
@@ -1297,7 +1315,7 @@ function getPinnedColumnClass<TData, TValue>(
     "relative",
     isHeader
       ? "z-30"
-      : "z-20 bg-background transition-colors group-hover:bg-muted group-data-[state=selected]:bg-muted dark:group-hover:bg-card",
+      : "z-20 bg-background transition-colors group-hover:bg-muted group-data-[state=selected]:bg-accent! dark:group-data-[state=selected]:bg-muted! dark:group-hover:bg-card",
     column.getIsLastColumn("left") &&
       "after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border after:content-['']"
   );
@@ -1308,11 +1326,13 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   defaultPageSize?: number;
+  enableRowSelection?: boolean | ((row: Row<TData>) => boolean);
   exportable?: boolean;
   filters?: DataTableFilterProps[];
   /** Use table-layout: fixed and honour column `size` defs for min widths. */
   fixedLayout?: boolean;
   frozenColumns?: string[];
+  getRowId?: (originalRow: TData, index: number) => string;
   /** Column ids hidden from the table UI (e.g. filter-only columns). */
   hiddenColumns?: string[];
   /**
@@ -1322,6 +1342,7 @@ interface DataTableProps<TData, TValue> {
   initialSearch?: DataTableSearch;
   isLoading?: boolean;
   onRowClick?: (row: TData) => void;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   /**
    * Called whenever the table's search params change (and once on mount).
    * The table is the source of truth; pass a `setState` here to drive a
@@ -1334,8 +1355,11 @@ interface DataTableProps<TData, TValue> {
    * `serverSide` mode. Falls back to `data.length` when omitted.
    */
   rowCount?: number;
+  rowSelection?: RowSelectionState;
   searchColumn?: string;
   searchVisibleColumns?: boolean;
+  /** Show "N selected" in the pagination footer when any rows are selected. */
+  selectionLabel?: boolean;
   /**
    * Paginate, sort and filter on the server. The table renders `data` as-is
    * (one page) instead of slicing client-side, and faceted filters hide their
@@ -1349,6 +1373,8 @@ interface DataTableProps<TData, TValue> {
    * update the table; table interactions update the URL.
    */
   syncWithUrl?: boolean;
+  /** Rendered after filters in the left toolbar cluster. */
+  toolbarActions?: ReactNode;
 }
 
 type DataTableImplProps<TData, TValue> = DataTableProps<TData, TValue> & {
@@ -1401,6 +1427,7 @@ function useTableSearchState({
     (updater) =>
       setState((prev) => ({
         ...prev,
+        pagination: { ...prev.pagination, pageIndex: 0 },
         sorting: functionalUpdate(updater, prev.sorting),
       })),
     []
@@ -1461,11 +1488,48 @@ export function buildColumnDef<TData>({
   ...props
 }: BuildColumnDefProps<TData>): ColumnDef<TData> {
   return {
+    cell: ({ getValue }) => <TruncatedCell render={getValue()} />,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title={title} />
     ),
-    cell: ({ getValue }) => <TruncatedCell render={getValue()} />,
     ...props,
+  };
+}
+
+export function createSelectColumn<TData>(): ColumnDef<TData> {
+  return {
+    cell: ({ row }) => (
+      <Checkbox
+        aria-label="Select row"
+        checked={row.getIsSelected()}
+        disabled={!row.getCanSelect()}
+        onCheckedChange={(checked) => row.toggleSelected(checked)}
+      />
+    ),
+    enableHiding: false,
+    enableSorting: false,
+    header: ({ table }) => {
+      const allSelected = table.getIsAllPageRowsSelected();
+      const someSelected = table.getIsSomePageRowsSelected();
+      const indeterminate = someSelected && !allSelected;
+
+      return (
+        <Checkbox
+          aria-label="Select all"
+          checked={allSelected}
+          indeterminate={indeterminate}
+          onCheckedChange={(checked) => {
+            if (indeterminate || allSelected) {
+              table.toggleAllPageRowsSelected(false);
+              return;
+            }
+            table.toggleAllPageRowsSelected(checked);
+          }}
+        />
+      );
+    },
+    id: "select",
+    size: 36,
   };
 }
 
@@ -1473,26 +1537,36 @@ function DataTableImpl<TData, TValue>({
   columns,
   data,
   defaultPageSize,
+  enableRowSelection = true,
   exportable,
   filters,
+  getRowId,
   searchColumn,
   searchVisibleColumns,
   className,
   initialSearch,
   isLoading,
   onRowClick,
+  onRowSelectionChange: onRowSelectionChangeProp,
   onSearchParamsChange,
   rowCount,
+  rowSelection: rowSelectionProp,
+  selectionLabel = true,
   serverSide,
   frozenColumns,
   pageSizeOptions,
   fixedLayout,
   hiddenColumns,
   size = "md",
+  toolbarActions,
   urlSearch,
 }: DataTableImplProps<TData, TValue>) {
   const resolvedDefaultPageSize = defaultPageSize ?? DEFAULT_PAGE_SIZE;
-  const [rowSelection, setRowSelection] = useState({});
+  const [uncontrolledSelection, setUncontrolledSelection] =
+    useState<RowSelectionState>({});
+  const rowSelection = rowSelectionProp ?? uncontrolledSelection;
+  const onRowSelectionChange =
+    onRowSelectionChangeProp ?? setUncontrolledSelection;
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     () =>
       Object.fromEntries(
@@ -1514,49 +1588,59 @@ function DataTableImpl<TData, TValue>({
   });
 
   const isServerSide = serverSide ?? false;
-  const tableMinWidth = useMemo(
-    () => getTableMinWidth(columns, fixedLayout),
-    [columns, fixedLayout]
-  );
+  const tableMinWidth = useMemo(() => {
+    if (!fixedLayout) {
+      return;
+    }
+    const hidden = new Set(hiddenColumns ?? []);
+    const visibleColumns = columns.filter((column) => {
+      const id =
+        ("id" in column && column.id) ||
+        ("accessorKey" in column ? String(column.accessorKey) : undefined);
+      return !(id && hidden.has(id));
+    });
+    return getTableMinWidth(visibleColumns, fixedLayout);
+  }, [columns, fixedLayout, hiddenColumns]);
 
   const table = useReactTable({
-    data,
-    columns,
     autoResetPageIndex: false,
-    manualFiltering: isServerSide,
-    manualPagination: isServerSide,
-    manualSorting: isServerSide,
-    rowCount: isServerSide ? (rowCount ?? data.length) : undefined,
+    columns,
+    data,
     defaultColumn: {
       filterFn: defaultColumnFilterFn,
     },
-    globalFilterFn: globalColumnFilterFn,
+    enableRowSelection,
     getColumnCanGlobalFilter: (column) =>
       column.getIsVisible() && typeof column.accessorFn !== "undefined",
-    state: {
-      sorting: state.sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters: state.columnFilters,
-      globalFilter: state.globalFilter,
-      pagination: state.pagination,
-      columnPinning: {
-        left: frozenColumns ?? [],
-      },
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange,
+    getCoreRowModel: getCoreRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getRowId,
+    getSortedRowModel: getSortedRowModel(),
+    globalFilterFn: globalColumnFilterFn,
+    manualFiltering: isServerSide,
+    manualPagination: isServerSide,
+    manualSorting: isServerSide,
     onColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange,
     onPaginationChange,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
+    onRowSelectionChange,
+    onSortingChange,
+    rowCount: isServerSide ? (rowCount ?? data.length) : undefined,
+    state: {
+      columnFilters: state.columnFilters,
+      columnPinning: {
+        left: frozenColumns ?? [],
+      },
+      columnVisibility,
+      globalFilter: state.globalFilter,
+      pagination: state.pagination,
+      rowSelection,
+      sorting: state.sorting,
+    },
   });
 
   return (
@@ -1574,10 +1658,11 @@ function DataTableImpl<TData, TValue>({
         searchVisibleColumns={searchVisibleColumns}
         serverSide={serverSide}
         table={table}
+        toolbarActions={toolbarActions}
       />
 
       <div className="relative min-h-0 min-w-0 max-w-full flex-1 overflow-auto rounded-3xl border">
-        {isLoading && (
+        {isLoading ? (
           <div
             className={cn(
               "pointer-events-none sticky z-31 h-0 overflow-visible",
@@ -1589,7 +1674,7 @@ function DataTableImpl<TData, TValue>({
               className="absolute inset-x-0 top-0"
             />
           </div>
-        )}
+        ) : null}
         {!table.getRowModel().rows?.length && (
           <div
             className={cn(
@@ -1661,7 +1746,7 @@ function DataTableImpl<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   className={cn(
-                    "group bg-background in-[tbody]:hover:bg-muted data-[state=selected]:bg-muted dark:in-[tbody]:hover:bg-card",
+                    "group bg-background in-[tbody]:hover:bg-muted data-[state=selected]:bg-accent! dark:data-[state=selected]:bg-muted! dark:in-[tbody]:hover:bg-card",
                     frozenColumns && "border-b-0"
                   )}
                   data-state={row.getIsSelected() && "selected"}
@@ -1688,13 +1773,20 @@ function DataTableImpl<TData, TValue>({
               ))
             ) : (
               <TableRow aria-hidden className="invisible h-24">
-                <TableCell className="h-24" colSpan={columns.length} />
+                <TableCell
+                  className="h-24"
+                  colSpan={table.getVisibleLeafColumns().length}
+                />
               </TableRow>
             )}
           </TableBody>
         </TableComponent>
       </div>
-      <DataTablePagination pageSizeOptions={pageSizeOptions} table={table} />
+      <DataTablePagination
+        pageSizeOptions={pageSizeOptions}
+        selectionLabel={selectionLabel}
+        table={table}
+      />
     </div>
   );
 }

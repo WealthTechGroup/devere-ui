@@ -69,7 +69,7 @@
       "name": "tabs",
       "type": "registry:ui",
       "title": "Tabs",
-      "description": "Tabs built on Base UI with default and line variants, horizontal and vertical orientation and an animated sliding indicator.",
+      "description": "Tabs built on Base UI with default, line and outlined variants, horizontal and vertical orientation and an animated sliding indicator.",
       "dependencies": ["@base-ui/react", "class-variance-authority"],
       "files": [
         {
@@ -168,8 +168,9 @@
       "title": "Data Table",
       "description": "A TanStack Table wrapper with sorting, filtering, pagination, column visibility and CSV export. Built from the shadcn tasks example.",
       "registryDependencies": [
-        "@devere-ui/badge",
+        "badge",
         "button",
+        "checkbox",
         "command",
         "dropdown-menu",
         "input",

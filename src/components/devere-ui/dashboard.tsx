@@ -1,6 +1,6 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useMatches } from "@tanstack/react-router";
 import { ChevronsUpDownIcon, LogOutIcon, MenuIcon } from "lucide-react";
-import type { ComponentProps, ReactNode } from "react";
+import { type ComponentProps, type ReactNode, useMemo } from "react";
 import { Button } from "@/components/devere-ui/button";
 import { ThemeToggle } from "@/components/devere-ui/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -34,14 +34,20 @@ import { cn } from "@/lib/utils";
 
 type NavBadge = { count: number; className?: string };
 
-type NavItem = {
-  title: string;
+export type NavItem<TTo extends string = string> = {
+  title?: string;
   icon?: ReactNode;
-  to: string;
+  to: TTo;
   badge?: NavBadge;
+  exact?: boolean;
 };
 
-export type { NavItem };
+export type NavGroup<TTo extends string = string> = {
+  label?: string;
+  items: NavItem<TTo>[];
+};
+
+type LinkTo = ComponentProps<typeof Link>["to"];
 
 const TRAILING_SLASH_PATTERN = /\/$/;
 
@@ -49,28 +55,40 @@ function normalizePath(path: string) {
   return path.replace(TRAILING_SLASH_PATTERN, "") || "/";
 }
 
-function resolveNavTitle(
-  pathname: string,
-  items: { label?: string; items: NavItem[] }[]
-) {
-  const normalizedPathname = normalizePath(pathname);
+function getMatchingNavItem<TTo extends string>(
+  routeId: string | undefined,
+  items: NavGroup<TTo>[]
+): NavItem<TTo> | undefined {
+  if (!routeId) {
+    return;
+  }
+
+  const normalizedRouteId = normalizePath(routeId);
 
   for (const group of items) {
     for (const item of group.items) {
-      if (normalizePath(item.to) === normalizedPathname) {
-        return item.title;
+      if (normalizePath(item.to) === normalizedRouteId) {
+        return item;
       }
     }
   }
 }
 
-function NavLink({ to, resetScroll, ...props }: ComponentProps<typeof Link>) {
+function NavLink({
+  to,
+  resetScroll,
+  exact = true,
+  ...props
+}: Omit<ComponentProps<typeof Link>, "to"> & {
+  to: string;
+  exact?: boolean;
+}) {
   return (
     <Link
-      activeOptions={{ exact: true, includeSearch: false, includeHash: false }}
+      activeOptions={{ exact, includeHash: false, includeSearch: false }}
       activeProps={{ "data-active": true }}
       resetScroll={resetScroll}
-      to={to}
+      to={to as LinkTo}
       {...props}
     />
   );
@@ -79,8 +97,10 @@ function NavLink({ to, resetScroll, ...props }: ComponentProps<typeof Link>) {
 const navMenuButtonClassName =
   "font-medium data-active:ring-1 data-active:ring-foreground/10 data-active:dark:ring-foreground/15 data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground [&>svg]:text-muted-foreground";
 
-type AppSidebarProps = ComponentProps<typeof Sidebar> & {
-  items: { label?: string; items: NavItem[] }[];
+type AppSidebarProps<TTo extends string = string> = ComponentProps<
+  typeof Sidebar
+> & {
+  items: NavGroup<TTo>[];
   user?: {
     initials: string;
     name: string;
@@ -89,21 +109,21 @@ type AppSidebarProps = ComponentProps<typeof Sidebar> & {
   signOut?: () => void;
   logo: string;
   title: string;
-  homePath?: string;
+  homePath?: TTo;
   resetScroll?: boolean;
 };
 
-export function AppSidebar({
+export function AppSidebar<TTo extends string = string>({
   title,
   items,
   user,
   signOut,
   logo,
   collapsible = "icon",
-  homePath = "/",
+  homePath = "/" as TTo,
   resetScroll = true,
   ...props
-}: AppSidebarProps) {
+}: AppSidebarProps<TTo>) {
   const { toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
 
@@ -121,8 +141,13 @@ export function AppSidebar({
             <SidebarMenuButton
               className="data-active:bg-transparent data-active:text-foreground group-data-[collapsible=icon]:p-1.5!"
               onClick={handleSidebarClick}
-              render={(props) => (
-                <NavLink resetScroll={resetScroll} to={homePath} {...props} />
+              render={(renderProps) => (
+                <NavLink
+                  exact={true}
+                  resetScroll={resetScroll}
+                  to={homePath}
+                  {...renderProps}
+                />
               )}
             >
               <img alt="Dashboard Logo" height={24} src={logo} width={24} />
@@ -138,16 +163,17 @@ export function AppSidebar({
               <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             )}
             <SidebarMenu>
-              {group.items.map((item, index) => (
-                <SidebarMenuItem key={`${item.to}-${index.toString()}`}>
+              {group.items.map((item, itemIndex) => (
+                <SidebarMenuItem key={`${item.to}-${itemIndex.toString()}`}>
                   <SidebarMenuButton
                     className={navMenuButtonClassName}
                     onClick={handleSidebarClick}
-                    render={(props) => (
+                    render={(renderProps) => (
                       <NavLink
+                        exact={item.exact}
                         resetScroll={resetScroll}
                         to={item.to}
-                        {...props}
+                        {...renderProps}
                       />
                     )}
                     tooltip={item.title}
@@ -166,11 +192,11 @@ export function AppSidebar({
           </SidebarGroup>
         ))}
       </SidebarContent>
-      {user && (
+      {user ? (
         <SidebarFooter className="border-t">
           <NavUser signOut={signOut} user={user} />
         </SidebarFooter>
-      )}
+      ) : null}
       <SidebarRail />
     </Sidebar>
   );
@@ -236,8 +262,7 @@ export function NavUser({ user, signOut }: NavUserProps) {
                 title="Theme"
               />
             </DropdownMenuGroup>
-
-            {signOut && (
+            {signOut ? (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
@@ -245,7 +270,7 @@ export function NavUser({ user, signOut }: NavUserProps) {
                   Log out
                 </DropdownMenuItem>
               </>
-            )}
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
@@ -279,15 +304,26 @@ function SidebarMenuTrigger({
   );
 }
 
-export function TopBar({
-  items,
-}: {
-  items: { label?: string; items: NavItem[] }[];
-}) {
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
-  const title = resolveNavTitle(pathname, items);
+type TopBarProps<TTo extends string = string, TId extends string = string> = {
+  items: NavGroup<TTo>[];
+  customTitles?: Partial<Record<TId, ReactNode>>;
+};
+
+export function TopBar<
+  TTo extends string = string,
+  TId extends string = string,
+>({ items, customTitles }: TopBarProps<TTo, TId>) {
+  const matches = useMatches();
+  const currentRouteId = matches.at(-1)?.routeId;
+
+  const activeItem = useMemo(
+    () => getMatchingNavItem(currentRouteId, items),
+    [items, currentRouteId]
+  );
+  const customTitle = useMemo(
+    () => (currentRouteId ? customTitles?.[currentRouteId as TId] : undefined),
+    [currentRouteId, customTitles]
+  );
 
   return (
     <header className="sticky top-0 z-40 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/40 backdrop-blur-sm transition-[width,height] ease-linear">
@@ -297,27 +333,38 @@ export function TopBar({
           className="my-auto mr-2 data-[orientation=vertical]:h-4"
           orientation="vertical"
         />
-        {title ? <p className="font-bold">{title}</p> : null}
+        {customTitle ? customTitle : null}
+        {!customTitle && activeItem?.title ? (
+          <p className="font-bold">{activeItem.title}</p>
+        ) : null}
       </div>
     </header>
   );
 }
 
-type DashboardProps = AppSidebarProps & {
+type DashboardProps<
+  TTo extends string = string,
+  TId extends string = string,
+> = AppSidebarProps<TTo> & {
   children: ReactNode;
   mainClassName?: string;
   sideBarClassName?: string;
   className?: string;
+  customTitles?: Partial<Record<TId, ReactNode>>;
 };
 
-export function Dashboard({
+export function Dashboard<
+  TTo extends string = string,
+  TId extends string = string,
+>({
   children,
   mainClassName,
   sideBarClassName,
   className,
   items,
+  customTitles,
   ...props
-}: DashboardProps) {
+}: DashboardProps<TTo, TId>) {
   return (
     <SidebarProvider className="min-h-svh">
       <AppSidebar className={sideBarClassName} items={items} {...props} />
@@ -327,7 +374,7 @@ export function Dashboard({
           mainClassName
         )}
       >
-        <TopBar items={items} />
+        <TopBar customTitles={customTitles} items={items} />
         <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
           {children}
         </div>
