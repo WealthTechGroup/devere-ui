@@ -49,7 +49,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
       className={cn(
-        "bg-muted font-medium before:absolute before:-top-px before:right-0 before:left-0 before:h-px before:bg-border dark:bg-card [&>tr]:last:border-b-0",
+        "bg-sidebar font-medium before:absolute before:-top-px before:right-0 before:left-0 before:h-px before:bg-border dark:bg-card [&>tr]:last:border-b-0 [&>tr]:last:[&_td]:border-b-0",
         className
       )}
       data-slot="table-footer"
@@ -75,7 +75,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       className={cn(
-        "h-10 whitespace-nowrap bg-muted px-3 text-left align-middle font-medium text-foreground has-[[role=checkbox]]:pr-0 dark:bg-card",
+        "h-10 min-w-0 overflow-hidden whitespace-nowrap bg-muted px-3 text-left align-middle font-medium text-foreground has-[[role=checkbox]]:pr-0 dark:bg-card",
         className
       )}
       data-slot="table-head"
@@ -88,7 +88,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       className={cn(
-        "whitespace-nowrap px-3 py-2 align-middle has-[[role=checkbox]]:pr-0",
+        "min-w-0 overflow-hidden whitespace-nowrap px-3 py-2 align-middle has-[[role=checkbox]]:pr-0",
         className
       )}
       data-slot="table-cell"
@@ -118,17 +118,28 @@ function TruncatedCell({
   render: unknown;
   className?: string;
 } & React.ComponentProps<"div">) {
+  const text =
+    typeof render === "string" || typeof render === "number"
+      ? String(render)
+      : null;
+
+  const content = (() => {
+    if (isValidElement(render)) {
+      return render;
+    }
+    if (text === null) {
+      return <span className="text-muted-foreground italic">No data</span>;
+    }
+    return text;
+  })();
+
   return (
     <div
-      className={cn("max-w-[220px] truncate", className)}
-      title={typeof render === "string" ? render : undefined}
+      className={cn("truncate", className)}
+      title={text ?? undefined}
       {...props}
     >
-      {isValidElement(render) || typeof render === "string" ? (
-        render
-      ) : (
-        <span className="text-muted-foreground italic">No data</span>
-      )}
+      {content}
     </div>
   );
 }

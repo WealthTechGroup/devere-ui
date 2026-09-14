@@ -48,6 +48,7 @@ const columns: ColumnDef<Task>[] = [
         </span>
       </div>
     ),
+    footer: ({ table }) => `${table.getRowCount()} tasks`,
   },
   {
     accessorKey: "status",

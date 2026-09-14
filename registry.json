@@ -166,7 +166,7 @@
       "name": "data-table",
       "type": "registry:ui",
       "title": "Data Table",
-      "description": "A TanStack Table wrapper with sorting, filtering, pagination, column visibility and CSV export. Built from the shadcn tasks example.",
+      "description": "A TanStack Table wrapper with sorting, filtering, pagination, column visibility, required filters, optional footers and CSV export. Built from the shadcn tasks example.",
       "registryDependencies": [
         "badge",
         "button",
@@ -196,6 +196,62 @@
           "path": "src/components/devere-ui/data-table.tsx",
           "type": "registry:ui",
           "target": "@components/devere-ui/data-table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "markdown-viewer",
+      "type": "registry:ui",
+      "title": "Markdown Viewer",
+      "description": "Renders markdown with styled headings, lists, links, CTA buttons and YouTube embeds.",
+      "dependencies": ["react-markdown", "remark-breaks"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/markdown-viewer.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/markdown-viewer.tsx"
+        }
+      ]
+    },
+    {
+      "name": "markdown-editor",
+      "type": "registry:ui",
+      "title": "Markdown Editor",
+      "description": "A write/preview markdown editor with formatting tools, variables and custom button and YouTube snippets.",
+      "registryDependencies": [
+        "@devere-ui/button",
+        "@devere-ui/markdown-viewer",
+        "@devere-ui/tabs",
+        "dropdown-menu",
+        "textarea",
+        "tooltip"
+      ],
+      "dependencies": ["lucide-react"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/markdown-editor.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/markdown-editor.tsx"
+        },
+        {
+          "path": "src/components/devere-ui/markdown-viewer.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/markdown-viewer.tsx"
+        }
+      ]
+    },
+    {
+      "name": "month-range-picker",
+      "type": "registry:ui",
+      "title": "Month Range Picker",
+      "description": "A popover month-range picker with a two-year calendar and quick range shortcuts.",
+      "registryDependencies": ["@devere-ui/button", "popover"],
+      "dependencies": ["lucide-react"],
+      "files": [
+        {
+          "path": "src/components/devere-ui/month-range-picker.tsx",
+          "type": "registry:ui",
+          "target": "@components/devere-ui/month-range-picker.tsx"
         }
       ]
     },

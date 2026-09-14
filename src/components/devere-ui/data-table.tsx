@@ -1,5 +1,11 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import type { Column, OnChangeFn, Row, Table } from "@tanstack/react-table";
+import type {
+  Cell,
+  Column,
+  OnChangeFn,
+  Row,
+  Table,
+} from "@tanstack/react-table";
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -42,6 +48,7 @@ import {
   TableBody,
   TableCell,
   Table as TableComponent,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -527,6 +534,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  required?: boolean;
   showCount?: boolean;
   title?: string;
 }
@@ -547,10 +555,11 @@ function useFacetedFilterLogic<TData, TValue>({
   allowCustom,
   column,
   options,
+  required,
   showCount = true,
 }: Pick<
   DataTableFacetedFilterProps<TData, TValue>,
-  "allowCustom" | "column" | "options" | "showCount"
+  "allowCustom" | "column" | "options" | "required" | "showCount"
 >) {
   // Skip faceting when unused — filter-only columns without accessors crash
   // TanStack's getFacetedUniqueValues (values.length on undefined).
@@ -571,6 +580,13 @@ function useFacetedFilterLogic<TData, TValue>({
   };
 
   const toggleValue = (value: string) => {
+    if (required) {
+      if (selectedValues.size === 1 && selectedValues.has(value)) {
+        return;
+      }
+      setSelectedValues(new Set([value]));
+      return;
+    }
     const next = new Set(selectedValues);
     if (next.has(value)) {
       next.delete(value);
@@ -687,7 +703,7 @@ function FacetedFilterCheckboxOption({
     >
       <div
         className={cn(
-          "flex size-4 shrink-0 items-center justify-center rounded-[4px] border",
+          "flex size-4 shrink-0 items-center justify-center rounded-lg border",
           isSelected
             ? "border-primary bg-primary text-primary-foreground"
             : "border-input [&_svg]:invisible"
@@ -803,6 +819,7 @@ function FacetedFilterCustomPopoverContent({
   filterOptionsList,
   onCustomInputChange,
   pendingCustomValue,
+  required,
   selectCustomValue,
   selectedCount,
   showListSection,
@@ -816,6 +833,7 @@ function FacetedFilterCustomPopoverContent({
   filterOptionsList: React.ReactNode;
   onCustomInputChange: (value: string) => void;
   pendingCustomValue: boolean;
+  required?: boolean;
   selectCustomValue: (value: string) => void;
   selectedCount: number;
   showListSection: boolean;
@@ -848,7 +866,7 @@ function FacetedFilterCustomPopoverContent({
         <CommandList className="max-h-72 overflow-y-auto p-0">
           {filterOptionsList}
         </CommandList>
-        {selectedCount > 0 ? (
+        {selectedCount > 0 && !required ? (
           <>
             <Separator />
             <FacetedFilterClearSection onClear={clearFilters} />
@@ -891,6 +909,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  required,
   showCount = true,
   allowCustom = false,
   customPlaceholder,
@@ -900,6 +919,7 @@ export function DataTableFacetedFilter<TData, TValue>({
     allowCustom,
     column,
     options,
+    required,
     showCount,
   });
 
@@ -922,7 +942,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   const optionList = (
     <>
       {filterOptionsList}
-      {!allowCustom && filter.selectedValues.size > 0 ? (
+      {!(required || allowCustom) && filter.selectedValues.size > 0 ? (
         <>
           <CommandSeparator className="my-0" />
           <FacetedFilterClearSection onClear={filter.clearFilters} />
@@ -945,7 +965,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           </Button>
         }
       />
-      <PopoverContent align="start" className="w-[260px] gap-0 p-0">
+      <PopoverContent align="start" className="w-65 gap-0 p-0">
         {allowCustom ? (
           <FacetedFilterCustomPopoverContent
             clearFilters={filter.clearFilters}
@@ -955,6 +975,7 @@ export function DataTableFacetedFilter<TData, TValue>({
             filterOptionsList={filterOptionsList}
             onCustomInputChange={filter.setCustomInput}
             pendingCustomValue={filter.pendingCustomValue}
+            required={required}
             selectCustomValue={filter.selectCustomValue}
             selectedCount={filter.selectedValues.size}
             showListSection={filter.showListSection}
@@ -1021,10 +1042,10 @@ export function DataTablePagination<TData>({
             }}
             value={`${table.getState().pagination.pageSize}`}
           >
-            <SelectTrigger className="h-8 w-[80px]">
+            <SelectTrigger className="h-8 w-20">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
-            <SelectContent className="min-w-[80px]" side="top">
+            <SelectContent className="min-w-20" side="top">
               {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
@@ -1087,14 +1108,52 @@ export interface DataTableFilterProps {
   allowCustom?: boolean;
   column: string;
   customPlaceholder?: string;
+  defaultValue?: string;
   description?: string;
   options: {
     label: string;
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  required?: boolean;
   showCount?: boolean;
   title: string;
+}
+
+function requiredColumnFilters(
+  filters?: DataTableFilterProps[]
+): ColumnFiltersState {
+  return (filters ?? [])
+    .filter((filter) => filter.required && filter.defaultValue)
+    .map((filter) => ({
+      id: filter.column,
+      value: [filter.defaultValue as string],
+    }));
+}
+
+function isTableFiltered<TData>(
+  table: Table<TData>,
+  filters?: DataTableFilterProps[]
+) {
+  if (table.getState().globalFilter) {
+    return true;
+  }
+  const defaults = new Map(
+    (filters ?? [])
+      .filter((filter) => filter.required && filter.defaultValue)
+      .map((filter) => [filter.column, filter.defaultValue as string])
+  );
+  const { columnFilters } = table.getState();
+  if (
+    [...defaults.entries()].some(([id, value]) => {
+      const current = columnFilters.find((filter) => filter.id === id);
+      const values = normalizeFilterValue(current?.value);
+      return values.length !== 1 || values[0] !== value;
+    })
+  ) {
+    return true;
+  }
+  return columnFilters.some((filter) => !defaults.has(filter.id));
 }
 
 interface DataTableToolbarProps<TData> {
@@ -1118,9 +1177,7 @@ export function DataTableToolbar<TData>({
   serverSide,
   toolbarActions,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered =
-    table.getState().columnFilters.length > 0 ||
-    !!table.getState().globalFilter;
+  const isFiltered = isTableFiltered(table, filters);
   const hasSearch = searchVisibleColumns || Boolean(searchColumn);
 
   let searchValue = "";
@@ -1139,7 +1196,7 @@ export function DataTableToolbar<TData>({
         {hasSearch ? (
           <Input
             aria-label="Filter rows"
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-37.5 lg:w-62.5"
             id="data-table-search"
             onChange={(event) => {
               if (searchVisibleColumns) {
@@ -1165,6 +1222,7 @@ export function DataTableToolbar<TData>({
             description={filter.description}
             key={filter.title}
             options={filter.options}
+            required={filter.required}
             showCount={filter.showCount ?? !serverSide}
             title={filter.title}
           />
@@ -1177,7 +1235,7 @@ export function DataTableToolbar<TData>({
                 return;
               }
 
-              table.setColumnFilters([]);
+              table.setColumnFilters(requiredColumnFilters(filters));
               table.setGlobalFilter("");
             }}
             size="sm"
@@ -1229,7 +1287,7 @@ export function DataTableViewOptions<TData>({
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-[150px]">
+      <DropdownMenuContent align="end" className="w-37.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
         </DropdownMenuGroup>
@@ -1285,13 +1343,18 @@ function getColumnStyle<TData, TValue>(
     return {};
   }
 
-  const widthStyle: React.CSSProperties = hasFixedSize
-    ? { minWidth: size }
-    : {
-        maxWidth: column.getSize(),
-        minWidth: column.getSize(),
-        width: column.getSize(),
-      };
+  let widthStyle: React.CSSProperties;
+  if (hasFixedSize && pinned) {
+    widthStyle = { maxWidth: size, minWidth: size, width: size };
+  } else if (hasFixedSize) {
+    widthStyle = { minWidth: size };
+  } else {
+    widthStyle = {
+      maxWidth: column.getSize(),
+      minWidth: column.getSize(),
+      width: column.getSize(),
+    };
+  }
 
   if (!pinned) {
     return widthStyle;
@@ -1304,6 +1367,21 @@ function getColumnStyle<TData, TValue>(
   };
 }
 
+function getCellMetaClass<TData, TValue>(
+  cell: Cell<TData, TValue>
+): string | undefined {
+  const meta = cell.column.columnDef.meta as
+    | { cellClassName?: string | ((row: TData) => string) }
+    | undefined;
+  if (!meta?.cellClassName) {
+    return;
+  }
+  if (typeof meta.cellClassName === "function") {
+    return meta.cellClassName(cell.row.original);
+  }
+  return meta.cellClassName;
+}
+
 function getPinnedColumnClass<TData, TValue>(
   column: Column<TData, TValue>,
   isHeader = false
@@ -1314,7 +1392,7 @@ function getPinnedColumnClass<TData, TValue>(
   return cn(
     "relative",
     isHeader
-      ? "z-30"
+      ? "z-40 bg-sidebar dark:bg-card"
       : "z-20 bg-background transition-colors group-hover:bg-muted group-data-[state=selected]:bg-accent! dark:group-data-[state=selected]:bg-muted! dark:group-hover:bg-card",
     column.getIsLastColumn("left") &&
       "after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-border after:content-['']"
@@ -1341,6 +1419,8 @@ interface DataTableProps<TData, TValue> {
    */
   initialSearch?: DataTableSearch;
   isLoading?: boolean;
+  /** When set with `onRowClick`, only matching rows get a pointer and fire the click. */
+  isRowClickable?: (row: TData) => boolean;
   onRowClick?: (row: TData) => void;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
   /**
@@ -1350,6 +1430,7 @@ interface DataTableProps<TData, TValue> {
    */
   onSearchParamsChange?: (search: DataTableSearchParams) => void;
   pageSizeOptions?: number[];
+  pagination?: boolean;
   /**
    * Total number of rows across all pages, used for the page count in
    * `serverSide` mode. Falls back to `data.length` when omitted.
@@ -1384,11 +1465,13 @@ type DataTableImplProps<TData, TValue> = DataTableProps<TData, TValue> & {
 function useTableSearchState({
   defaultPageSize,
   initialSearch,
+  resetColumnFilters,
   urlSearch,
   onSearchParamsChange,
 }: {
   defaultPageSize: number;
   initialSearch?: DataTableSearch;
+  resetColumnFilters?: ColumnFiltersState;
   urlSearch?: DataTableSearchParams;
   onSearchParamsChange?: (search: DataTableSearchParams) => void;
 }) {
@@ -1462,11 +1545,11 @@ function useTableSearchState({
     () =>
       setState((prev) => ({
         ...prev,
-        columnFilters: [],
+        columnFilters: resetColumnFilters ?? [],
         globalFilter: "",
         pagination: { ...prev.pagination, pageIndex: 0 },
       })),
-    []
+    [resetColumnFilters]
   );
 
   return {
@@ -1533,6 +1616,29 @@ export function createSelectColumn<TData>(): ColumnDef<TData> {
   };
 }
 
+function DataTablePaginationSlot<TData>({
+  pageSizeOptions,
+  pagination,
+  selectionLabel,
+  table,
+}: {
+  pageSizeOptions?: number[];
+  pagination: boolean;
+  selectionLabel?: boolean;
+  table: Table<TData>;
+}) {
+  if (!pagination) {
+    return null;
+  }
+  return (
+    <DataTablePagination
+      pageSizeOptions={pageSizeOptions}
+      selectionLabel={selectionLabel}
+      table={table}
+    />
+  );
+}
+
 function DataTableImpl<TData, TValue>({
   columns,
   data,
@@ -1546,7 +1652,9 @@ function DataTableImpl<TData, TValue>({
   className,
   initialSearch,
   isLoading,
+  isRowClickable,
   onRowClick,
+  pagination = true,
   onRowSelectionChange: onRowSelectionChangeProp,
   onSearchParamsChange,
   rowCount,
@@ -1573,6 +1681,10 @@ function DataTableImpl<TData, TValue>({
         (hiddenColumns ?? []).map((columnId) => [columnId, false])
       )
   );
+  const resetColumnFilters = useMemo(
+    () => requiredColumnFilters(filters),
+    [filters]
+  );
   const {
     onColumnFiltersChange,
     onGlobalFilterChange,
@@ -1584,6 +1696,7 @@ function DataTableImpl<TData, TValue>({
     defaultPageSize: resolvedDefaultPageSize,
     initialSearch: urlSearch ? undefined : initialSearch,
     onSearchParamsChange,
+    resetColumnFilters,
     urlSearch,
   });
 
@@ -1642,6 +1755,9 @@ function DataTableImpl<TData, TValue>({
       sorting: state.sorting,
     },
   });
+  const hasFooter = table
+    .getAllLeafColumns()
+    .some((column) => column.columnDef.footer);
 
   return (
     <div
@@ -1678,7 +1794,7 @@ function DataTableImpl<TData, TValue>({
         {!table.getRowModel().rows?.length && (
           <div
             className={cn(
-              "absolute right-0 bottom-0 left-0 flex flex-1 flex-col items-center justify-center bg-muted",
+              "absolute inset-x-0 bottom-0 z-25 flex items-center justify-center bg-muted",
               getStickyHeaderOffsetClass(size)
             )}
             role="status"
@@ -1720,7 +1836,7 @@ function DataTableImpl<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     className={cn(
-                      "sticky top-0 z-30 has-data-interactive:pl-0",
+                      "sticky top-0 z-30 bg-sidebar has-data-interactive:pl-0 dark:bg-card",
                       getDataTableHeadHeightClass(size),
                       getPinnedColumnClass(header.column, true)
                     )}
@@ -1743,34 +1859,48 @@ function DataTableImpl<TData, TValue>({
             className={cn(isLoading && "opacity-50 transition-opacity")}
           >
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  className={cn(
-                    "group bg-background in-[tbody]:hover:bg-muted data-[state=selected]:bg-accent! dark:data-[state=selected]:bg-muted! dark:in-[tbody]:hover:bg-card",
-                    frozenColumns && "border-b-0"
-                  )}
-                  data-state={row.getIsSelected() && "selected"}
-                  key={row.id}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      className={cn(
-                        frozenColumns && "border-b",
-                        getPinnedColumnClass(cell.column),
-                        getDataTableCellPaddingClass(size)
-                      )}
-                      key={cell.id}
-                      style={getColumnStyle(cell.column, fixedLayout)}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row, rowIndex, rows) => {
+                const clickable =
+                  onRowClick !== undefined &&
+                  (isRowClickable?.(row.original) ?? true);
+                return (
+                  <TableRow
+                    className={cn(
+                      "group bg-background in-[tbody]:hover:bg-muted data-[state=selected]:bg-accent! dark:data-[state=selected]:bg-muted! dark:in-[tbody]:hover:bg-card",
+                      frozenColumns && "border-b-0",
+                      clickable && "cursor-pointer"
+                    )}
+                    data-state={row.getIsSelected() && "selected"}
+                    key={row.id}
+                    onClick={() => {
+                      if (!clickable) {
+                        return;
+                      }
+                      onRowClick(row.original);
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        className={cn(
+                          frozenColumns &&
+                            (hasFooter || rowIndex < rows.length - 1) &&
+                            "border-b",
+                          getPinnedColumnClass(cell.column),
+                          getDataTableCellPaddingClass(size),
+                          getCellMetaClass(cell)
+                        )}
+                        key={cell.id}
+                        style={getColumnStyle(cell.column, fixedLayout)}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow aria-hidden className="invisible h-24">
                 <TableCell
@@ -1780,10 +1910,43 @@ function DataTableImpl<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
+          {hasFooter ? (
+            <TableFooter>
+              {table.getFooterGroups().map((footerGroup) => (
+                <TableRow
+                  className={cn(frozenColumns && "border-b-0")}
+                  key={footerGroup.id}
+                >
+                  {footerGroup.headers.map((header) => (
+                    <TableCell
+                      className={cn(
+                        "font-bold",
+                        frozenColumns && "border-b",
+                        getPinnedColumnClass(header.column),
+                        header.column.getIsPinned() &&
+                          "bg-sidebar dark:bg-card",
+                        getDataTableCellPaddingClass(size)
+                      )}
+                      key={header.id}
+                      style={getColumnStyle(header.column, fixedLayout)}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.footer,
+                            header.getContext()
+                          )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableFooter>
+          ) : null}
         </TableComponent>
       </div>
-      <DataTablePagination
+      <DataTablePaginationSlot
         pageSizeOptions={pageSizeOptions}
+        pagination={pagination}
         selectionLabel={selectionLabel}
         table={table}
       />

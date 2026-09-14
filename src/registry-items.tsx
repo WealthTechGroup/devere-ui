@@ -9,7 +9,10 @@ import { DrawerDemo } from "@/demos/drawer-demo";
 import { FormattersDemo } from "@/demos/formatters-demo";
 import { LinearProgressDemo } from "@/demos/linear-progress-demo";
 import { LoadingScreenDemo } from "@/demos/loading-screen-demo";
+import { MarkdownEditorDemo } from "@/demos/markdown-editor-demo";
+import { MarkdownViewerDemo } from "@/demos/markdown-viewer-demo";
 import { MicrosoftLoginDemo } from "@/demos/microsoft-login-demo";
+import { MonthRangePickerDemo } from "@/demos/month-range-picker-demo";
 import { NotFoundDemo } from "@/demos/not-found-demo";
 import { TableDemo } from "@/demos/table-demo";
 import { TabsDemo } from "@/demos/tabs-demo";
@@ -61,7 +64,7 @@ const registryItemsUnsorted: RegistryItem[] = [
     name: "data-table",
     title: "Data Table",
     description:
-      "A TanStack Table wrapper with sorting, filters, pagination and column visibility. Tasks example inspired by shadcn.",
+      "A TanStack Table wrapper with sorting, filters, pagination, column visibility, required filters and optional footers. Tasks example inspired by shadcn.",
     demo: <TasksDataTableDemo />,
     expandable: true,
     previewClassName: "items-start justify-start overflow-auto",
@@ -88,6 +91,31 @@ const registryItemsUnsorted: RegistryItem[] = [
       "Currency, number and string formatters using Intl with compact notation and currency display helpers.",
     demo: <FormattersDemo />,
     previewClassName: "items-start justify-start",
+  },
+  {
+    name: "markdown-editor",
+    title: "Markdown Editor",
+    description:
+      "A write/preview markdown editor with formatting tools, variables and custom button and YouTube snippets.",
+    demo: <MarkdownEditorDemo />,
+    expandable: true,
+    previewClassName: "items-start justify-start overflow-auto",
+  },
+  {
+    name: "markdown-viewer",
+    title: "Markdown Viewer",
+    description:
+      "Renders markdown with styled headings, lists, links, CTA buttons and YouTube embeds.",
+    demo: <MarkdownViewerDemo />,
+    previewClassName: "items-start justify-start",
+  },
+  {
+    name: "month-range-picker",
+    title: "Month Range Picker",
+    description:
+      "A popover month-range picker with a two-year calendar and quick range shortcuts.",
+    demo: <MonthRangePickerDemo />,
+    previewClassName: "items-start justify-start overflow-auto",
   },
   {
     name: "linear-progress",
